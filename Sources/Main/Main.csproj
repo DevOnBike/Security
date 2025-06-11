@@ -1,16 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <DebugType>embedded</DebugType>
-        <RootNamespace>DevOnBike.Heimdall</RootNamespace>
-        <AssemblyName>DevOnBike.Heimdall</AssemblyName>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DebugType>embedded</DebugType>
+    <RootNamespace>DevOnBike.Heimdall</RootNamespace>
+    <AssemblyName>DevOnBike.Heimdall</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>DevOnBike.Heimdall</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>DevOnBike</Authors>
+    <Company></Company>
+    <Description>Heimdall - nordic god of security that brings you goodies for more safety</Description>
+    <RepositoryUrl>https://github.com/DevOnBike/Security</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
 </Project>
