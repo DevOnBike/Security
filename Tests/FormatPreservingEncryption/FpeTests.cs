@@ -1,40 +1,35 @@
-﻿using Org.BouncyCastle.Crypto.Fpe;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Crypto.Utilities;
+﻿using DevOnBike.Heimdall.Cryptography;
+using Microsoft.AspNetCore.DataProtection;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Text;
 
 namespace DevOnBike.Security.Tests.FormatPreservingEncryption
 {
     public class FpeTests
     {
         [Fact]
-        public void BouncyCastleFF1_EncryptionDecryption()
+        public void CreditCardFpe_EncryptionDecryption()
         {
-            byte[] key = Hex.Decode("EF4359D8D580AA4F7F036D6F04FC6A942B7E151628AED2A6");            
-            byte[] tweak = Hex.Decode("39383736353433323130");
-            char[] input = "01234567890123456".ToCharArray();
+            var key = Hex.Decode("EF4359D8D580AA4F7F036D6F04FC6A942B7E151628AED2A6");
 
-            // Create a mapper from our alphabet to indexs
-            var alphabetMapper = new BasicAlphabetMapper("0123456789");
-            var fpeParams = new FpeParameters(new KeyParameter(key), alphabetMapper.Radix, tweak);
-            var engine = new FpeFf1Engine();
+            // A tweak is public, non-secret data that changes the encryption output.
+            // For example, you could use a customer ID or a portion of the card's BIN.
+            var tweak = Encoding.UTF8.GetBytes("some-public-tweak-data");
 
-            engine.Init(true, fpeParams);
+            var secretKey = new Secret(key);
+            var secretTweak = new Secret(tweak);
+            var fpe = new CreditCardFpe(secretKey, secretTweak);
 
-            var bytes = alphabetMapper.ConvertToIndexes(input);
-            var r = engine.ProcessBlock(bytes, 0, bytes.Length, bytes, 0);
-            var aa = alphabetMapper.ConvertToChars(bytes);
-            var encrypted = new string(aa);
+            // 3. Define the credit card number to encrypt
+            var originalCardNumber = "4242424242424242";
 
-            engine = new FpeFf1Engine();
+            // 4. Encrypt the number
+            var encryptedCardNumber = fpe.Encrypt(originalCardNumber);
 
-            engine.Init(false, fpeParams);
+            // 5. Decrypt the number
+            var decryptedCardNumber = fpe.Decrypt(encryptedCardNumber);
 
-            bytes = alphabetMapper.ConvertToIndexes(aa);
-            r = engine.ProcessBlock(bytes, 0, bytes.Length, bytes, 0);
-            aa = alphabetMapper.ConvertToChars(bytes);
-
-            var decrypted = new string(aa);
+            Assert.Equal(originalCardNumber, decryptedCardNumber);
         }
 
     }

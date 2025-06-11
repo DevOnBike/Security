@@ -6,21 +6,6 @@ namespace DevOnBike.Security.Tests.Cryptography
 {
     public class CryptographyTests
     {
-        /// <summary>
-        /// Generates an array of cryptographically strong random bytes of a specified length.
-        /// </summary>
-        /// <param name="length">The desired length of the byte array.</param>
-        /// <returns>A new byte array filled with random bytes.</returns>
-        private static byte[] GenerateRandomBytes(int length)
-        {
-            var bytes = new byte[length];
-            // Fills a span with a cryptographically strong sequence of random values.
-            RandomNumberGenerator.Fill(bytes);
-            return bytes;
-        }
-
-        // --- Argument Validation Tests ---
-
         [Fact]
         public void Encrypt_ThrowsArgumentException_WhenNonceLengthIsIncorrect()
         {
@@ -106,7 +91,7 @@ namespace DevOnBike.Security.Tests.Cryptography
             Assert.NotEmpty(encryptedData);
             // The encrypted data length should be plaintext length + 16 (for the tag)
             Assert.Equal(plaintext.Length + 16, encryptedData.Length);
-            
+
             Assert.NotNull(decryptedData);
             Assert.True(plaintext.SequenceEqual(decryptedData), "decrypted data should match original plaintext");
         }
@@ -127,7 +112,7 @@ namespace DevOnBike.Security.Tests.Cryptography
             // For empty plaintext, only the 16-byte Poly1305 tag is returned
             Assert.NotNull(encryptedData);
             Assert.Equal(16, encryptedData.Length); // Only the 16-byte tag
-            
+
             Assert.NotNull(decryptedData);
             Assert.True(plaintext.SequenceEqual(decryptedData), "decrypted empty plaintext should match original empty plaintext");
         }
@@ -172,9 +157,9 @@ namespace DevOnBike.Security.Tests.Cryptography
             }
             else // If plaintext was empty, tamper with the tag directly
             {
-                 tamperedEncryptedData[tamperedEncryptedData.Length - 1] = (byte)(tamperedEncryptedData[tamperedEncryptedData.Length - 1] ^ 0xFF);
+                tamperedEncryptedData[tamperedEncryptedData.Length - 1] = (byte)(tamperedEncryptedData[tamperedEncryptedData.Length - 1] ^ 0xFF);
             }
-            
+
 
             var decryptedData = XChaCha20Poly1305Helper.Decrypt(tamperedEncryptedData, nonce, key);
 
@@ -296,6 +281,19 @@ namespace DevOnBike.Security.Tests.Cryptography
             // Assert
             // Decryption should fail because the AAD is part of the authentication process.
             Assert.Null(decryptedData);
+        }
+
+        /// <summary>
+        /// Generates an array of cryptographically strong random bytes of a specified length.
+        /// </summary>
+        /// <param name="length">The desired length of the byte array.</param>
+        /// <returns>A new byte array filled with random bytes.</returns>
+        private static byte[] GenerateRandomBytes(int length)
+        {
+            var bytes = new byte[length];
+            // Fills a span with a cryptographically strong sequence of random values.
+            RandomNumberGenerator.Fill(bytes);
+            return bytes;
         }
     }
 }

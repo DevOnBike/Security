@@ -9,19 +9,22 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>DevOnBike.Heimdall</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <Authors>DevOnBike</Authors>
     <Company></Company>
-    <Description>Heimdall - nordic god of security that brings you goodies for more safety</Description>
+    <Description>Security powered by Heimdall</Description>
     <RepositoryUrl>https://github.com/DevOnBike/Security</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>logo.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <None Include="README.md" Pack="true" PackagePath="\"/>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.1" />
+    <None Include="logo.png" Pack="true" PackagePath="\"/>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

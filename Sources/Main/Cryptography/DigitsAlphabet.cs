@@ -1,0 +1,17 @@
+﻿using Org.BouncyCastle.Crypto.Utilities;
+
+namespace DevOnBike.Heimdall.Cryptography
+{
+    public class DigitsAlphabet : BasicAlphabetMapper
+    {
+        public static readonly DigitsAlphabet Instance = new();
+
+        public DigitsAlphabet() : this("0123456789")
+        {
+        }
+
+        protected DigitsAlphabet(string alphabet) : base(alphabet)
+        {
+        }
+    }
+}
