@@ -24,4 +24,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Sources\Main\Main.csproj" />
+  </ItemGroup>
+
 </Project>
