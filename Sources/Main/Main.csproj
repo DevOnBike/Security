@@ -7,11 +7,9 @@
     <RootNamespace>DevOnBike.Heimdall</RootNamespace>
     <AssemblyName>DevOnBike.Heimdall</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>DevOnBike.Heimdall</PackageId>
     <Version>0.0.2</Version>
     <Authors>DevOnBike</Authors>
-    <Company></Company>
     <Description>Security powered by Heimdall</Description>
     <RepositoryUrl>https://github.com/DevOnBike/Security</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

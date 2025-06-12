@@ -305,6 +305,31 @@ namespace DevOnBike.Security.Tests.Cryptography
             var decrypted = cryptor.Decrypt(secret, encrypted);
             Assert.True(decrypted.SequenceEqual(bytes));
         }
+        
+        [Fact]
+        public void ChaCha20Poly1305_Compare_ShouldWork()
+        {
+            var random = new BouncyCastleRandom();
+
+            var key = new byte[Chacha20Constants.KeySizeInBytes];
+            random.Fill(key);
+
+            using var secret = new Secret(key);
+
+            IChaCha20Poly1305 bcProtector = new BouncyCastleChaCha20Poly1305(random);
+            IChaCha20Poly1305 msProtector = new MicrosoftChaCha20Poly1305(random);
+
+            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+            var encrypted = bcProtector.Encrypt(secret, bytes);
+            var decrypted = msProtector.Decrypt(secret, encrypted);
+            Assert.True(decrypted.SequenceEqual(bytes));
+
+            encrypted = msProtector.Encrypt(secret, bytes);
+            decrypted = bcProtector.Decrypt(secret, encrypted);
+
+            Assert.True(decrypted.SequenceEqual(bytes));
+        }
 
         /// <summary>
         /// Generates an array of cryptographically strong random bytes of a specified length.
