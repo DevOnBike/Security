@@ -4,14 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'The version to publish (e.g., 1.0.1)'
-        required: true
+        description: 'SemVer to publish (e.g. 1.2.3 or 1.2.3-beta.4). Leave empty to use the <Version> from .csproj'
+        required: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -31,7 +33,7 @@ jobs:
       run: dotnet test -c Release --no-build --verbosity normal
 
     - name: Pack
-      run: dotnet pack -c Release -p:Version=${{ github.event.inputs.version }} -p:RepositoryCommit=${{ github.sha }} --output ./packages
+      run: dotnet pack -c Release --no-build -p:RepositoryCommit=${{ github.sha }} --output ./packages
 
     - name: Push to NuGet.org
       run: dotnet nuget push "./packages/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source "https://api.nuget.org/v3/index.json"
