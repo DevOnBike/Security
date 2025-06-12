@@ -15,12 +15,12 @@ namespace DevOnBike.Heimdall.Cryptography
 
         public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
-            var nonce = new byte[Chacha20Constants.NonceSizeInBytes];
+            var nonce = new byte[ChaCha20Constants.NonceSizeInBytes];
             _random.Fill(nonce);
             
             var encrypted = new byte[toEncrypt.Length];
-            var tag = new byte[Chacha20Constants.TagSizeInBytes];
-            var keyBytes = new byte[Chacha20Constants.KeySizeInBytes];
+            var tag = new byte[ChaCha20Constants.TagSizeInBytes];
+            var keyBytes = new byte[ChaCha20Constants.KeySizeInBytes];
             
             fixed (byte* __unused__ = keyBytes)
             {
@@ -43,10 +43,10 @@ namespace DevOnBike.Heimdall.Cryptography
 
         public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
-            var nonce = new byte[Chacha20Constants.NonceSizeInBytes];
+            var nonce = new byte[ChaCha20Constants.NonceSizeInBytes];
             Buffer.BlockCopy(toDecrypt, 0, nonce, 0, nonce.Length);
             
-            var tag = new byte[Chacha20Constants.TagSizeInBytes];
+            var tag = new byte[ChaCha20Constants.TagSizeInBytes];
             Buffer.BlockCopy(toDecrypt, nonce.Length, tag, 0, tag.Length);
             
             var encrypted = new byte[toDecrypt.Length - nonce.Length - tag.Length];

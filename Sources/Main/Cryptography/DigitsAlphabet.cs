@@ -6,7 +6,7 @@ namespace DevOnBike.Heimdall.Cryptography
     {
         public static readonly DigitsAlphabet Instance = new();
 
-        public DigitsAlphabet() : this("0123456789")
+        private DigitsAlphabet() : this("0123456789")
         {
         }
 

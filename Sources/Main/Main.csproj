@@ -10,11 +10,12 @@
     <SourceRevisionId>N/A</SourceRevisionId>
     <InformationalVersion>$(Version)+$(SourceRevisionId)</InformationalVersion>
     <PackageId>DevOnBike.Heimdall</PackageId>
-    <Version>0.0.2</Version>
+    <Version>0.0.3</Version>
     <Authors>DevOnBike</Authors>
     <Description>Security powered by Heimdall</Description>
     <RepositoryUrl>https://github.com/DevOnBike/Security</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PackageTags>security;encryption;chacha20;randomization</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>logo.png</PackageIcon>

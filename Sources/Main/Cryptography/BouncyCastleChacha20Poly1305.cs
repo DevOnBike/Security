@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
-using static DevOnBike.Heimdall.Cryptography.Chacha20Constants;
+using static DevOnBike.Heimdall.Cryptography.ChaCha20Constants;
 
 namespace DevOnBike.Heimdall.Cryptography
 {
