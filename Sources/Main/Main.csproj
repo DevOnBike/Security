@@ -8,8 +8,7 @@
     <AssemblyName>DevOnBike.Heimdall</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SourceRevisionId>N/A</SourceRevisionId>
-    <InformationalVersion>$(VersionPrefix)+$(SourceRevisionId)</InformationalVersion>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <InformationalVersion>$(Version)+$(SourceRevisionId)</InformationalVersion>
     <PackageId>DevOnBike.Heimdall</PackageId>
     <Version>0.0.2</Version>
     <Authors>DevOnBike</Authors>

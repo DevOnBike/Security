@@ -1,0 +1,37 @@
+name: Publish to nuget.org
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version to publish (e.g., 1.0.1)'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.x
+
+    - name: Get commit hash
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build -c Release --no-restore -p:SourceRevisionId=${{ steps.vars.outputs.sha_short }}
+
+    - name: Test
+      run: dotnet test -c Release --no-build --verbosity normal
+
+    - name: Pack
+      run: dotnet pack -c Release -p:Version=${{ github.event.inputs.version }} -p:RepositoryCommit=${{ github.sha }} --output ./packages
+
+    - name: Push to NuGet.org
+      run: dotnet nuget push "./packages/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source "https://api.nuget.org/v3/index.json"
