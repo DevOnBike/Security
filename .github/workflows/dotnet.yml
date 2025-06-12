@@ -17,16 +17,25 @@ jobs:
     - name: Install linux components
       run: |
         sudo apt-get update -y
+
     - name: Checkout code
       uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+
+    - name: Get commit hash
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
     - name: Restore dependencies
       run: dotnet restore
+
     - name: Build
-      run: dotnet build -c Release --no-restore 
+      run: dotnet build -c Release --no-restore -p:SourceRevisionId=${{ steps.vars.outputs.sha_short }}
+
     - name: Test
       run: dotnet test -c Release --no-build --verbosity normal
 
@@ -36,10 +45,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
