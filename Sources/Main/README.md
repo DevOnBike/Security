@@ -1,1 +1,3 @@
-xchacha20 polly 1305 algorithm
+- chacha20 poly 1305 (pure .net)
+- xchacha20 poly 1305 algorithm (pure .net)
+- format preserving encryption (FPE using BouncyCastle)

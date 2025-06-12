@@ -1,6 +1,8 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using DevOnBike.Heimdall.Cryptography;
+using DevOnBike.Heimdall.Randomization;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace DevOnBike.Security.Tests.Cryptography
 {
@@ -281,6 +283,27 @@ namespace DevOnBike.Security.Tests.Cryptography
             // Assert
             // Decryption should fail because the AAD is part of the authentication process.
             Assert.Null(decryptedData);
+        }
+        
+        [Fact]
+        public void MicrosoftChaCha20Poly1305_EncryptDecrypt_ShouldReturnOriginalData()
+        {
+            var random = new BouncyCastleRandom();
+
+            // Generate a random 32-byte (256-bit) key for ChaCha20
+            var key = new byte[Chacha20Constants.KeySizeInBytes];
+            random.Fill(key);
+
+            using var secret = new Secret(key);
+
+            IChaCha20Poly1305 cryptor = new MicrosoftChaCha20Poly1305(random);
+            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+            var encrypted = cryptor.Encrypt(secret, bytes);
+            Assert.True(encrypted.Length == bytes.Length + Chacha20Constants.TagSizeInBytes + Chacha20Constants.NonceSizeInBytes);
+
+            var decrypted = cryptor.Decrypt(secret, encrypted);
+            Assert.True(decrypted.SequenceEqual(bytes));
         }
 
         /// <summary>
