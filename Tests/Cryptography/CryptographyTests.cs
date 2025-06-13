@@ -137,9 +137,25 @@ namespace DevOnBike.Security.Tests.Cryptography
         }
 
         [Fact]
+        public void BouncyCastleChaCha20Poly1305_EncryptDecrypt_ShouldWork()
+        {
+            var key = CreateChaChaKey();
+
+            using var secret = new Secret(key);
+
+            var bc = CreateBouncyCastleChaCha20Poly1305();
+            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+            var encrypted = bc.Encrypt(secret, bytes);
+            var decrypted = bc.Decrypt(secret, encrypted);
+
+            Assert.True(decrypted.SequenceEqual(bytes));
+        }
+
+        [Fact]
         public void ChaCha20Poly1305_Compare_ShouldWork()
         {
-            var random = new BouncyCastleRandom();
+            var random = new DefaultRandom();
 
             var key = new byte[ChaCha20Constants.KeySizeInBytes];
             random.Fill(key);
@@ -188,6 +204,16 @@ namespace DevOnBike.Security.Tests.Cryptography
             return CreateBouncyCastleXChaCha20Poly1305(new DefaultRandom());
         }
 
+        private BouncyCastleChaCha20Poly1305 CreateBouncyCastleChaCha20Poly1305()
+        {
+            return CreateBouncyCastleChaCha20Poly1305(new DefaultRandom());
+        }
+
+        private BouncyCastleChaCha20Poly1305 CreateBouncyCastleChaCha20Poly1305(IRandom random)
+        {
+            return new BouncyCastleChaCha20Poly1305(random);
+        }
+
         private BouncyCastleXChaCha20Poly1305 CreateBouncyCastleXChaCha20Poly1305(IRandom random)
         {
             return new BouncyCastleXChaCha20Poly1305(random);
@@ -206,6 +232,11 @@ namespace DevOnBike.Security.Tests.Cryptography
         private ISecret CreateXChaChaKey()
         {
             return new Secret(RandomNumberGenerator.GetBytes(XChaCha20Constants.KeySizeInBytes));
+        }
+
+        private ISecret CreateChaChaKey()
+        {
+            return new Secret(RandomNumberGenerator.GetBytes(ChaCha20Constants.KeySizeInBytes));
         }
     }
 }

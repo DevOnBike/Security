@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using DevOnBike.Heimdall.Randomization;
+﻿using DevOnBike.Heimdall.Randomization;
 using Microsoft.AspNetCore.DataProtection;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -21,7 +20,7 @@ namespace DevOnBike.Heimdall.Cryptography
         public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
             var chacha = CreateCipher();
-            var output = new byte[toEncrypt.Length + NonceSizeInBytes + TagSizeInBytes];
+            var output = new byte[GetEncryptionTotalLength(toEncrypt)];
             var nonce = CreateNonceBuffer();
             var keyBuffer = CreateKeyBuffer();
 
@@ -35,11 +34,14 @@ namespace DevOnBike.Heimdall.Cryptography
                 using var safeNonce = new SafeByteArray(nonce);
 
                 Init(chacha, true, safeKey, safeNonce);
-                var result = chacha.DoFinal(toEncrypt); // encrypted + tag
 
-                Buffer.BlockCopy(safeNonce, 0, output, 0, NonceSizeInBytes);
-                Buffer.BlockCopy(result, 0, output, NonceSizeInBytes + TagSizeInBytes, toEncrypt.Length);
-                Buffer.BlockCopy(result, toEncrypt.Length, output, NonceSizeInBytes, TagSizeInBytes);
+                var result = chacha.DoFinal(toEncrypt); // encrypted + tag
+                var encrypted = new ReadOnlySpan<byte>(result, 0, result.Length - TagSizeInBytes);
+                var tag = new ReadOnlySpan<byte>(result, result.Length - TagSizeInBytes, TagSizeInBytes);
+
+                FillNonce(output, safeNonce);
+                FillTag(output, tag);
+                FillData(output, encrypted);
             }
 
             return output; // nonce + tag + encrypted
@@ -52,7 +54,7 @@ namespace DevOnBike.Heimdall.Cryptography
             var nonce = CreateNonceBuffer();
             var tag = new byte[TagSizeInBytes];
             var keyBuffer = new byte[key.Length];
-            
+
             fixed (byte* __unused__0 = nonce)
             fixed (byte* __unused__1 = tag)
             fixed (byte* __unused__2 = keyBuffer)
@@ -63,14 +65,14 @@ namespace DevOnBike.Heimdall.Cryptography
 
                 key.Fill(keyBuffer);
 
-                Buffer.BlockCopy(toDecrypt, 0, safeNonce, 0, NonceSizeInBytes); // nonce
-                Buffer.BlockCopy(toDecrypt, NonceSizeInBytes, safeTag, 0, TagSizeInBytes); // tag
+                ExtractNonce(toDecrypt, safeNonce);
+                ExtractTag(toDecrypt, safeTag);
 
                 var encryptedLength = toDecrypt.Length - NonceSizeInBytes - TagSizeInBytes;
                 var toProcess = new byte[toDecrypt.Length - NonceSizeInBytes]; // encrypted + tag
 
-                Buffer.BlockCopy(toDecrypt, toDecrypt.Length - encryptedLength, toProcess, 0, encryptedLength);
-                Buffer.BlockCopy(tag, 0, toProcess, encryptedLength, TagSizeInBytes);
+                Buffer.BlockCopy(toDecrypt, toDecrypt.Length - encryptedLength, toProcess, 0, encryptedLength); // encrypted
+                Buffer.BlockCopy(tag, 0, toProcess, encryptedLength, TagSizeInBytes); // tag
 
                 Init(chacha, false, safeKey, safeNonce);
 
@@ -80,7 +82,7 @@ namespace DevOnBike.Heimdall.Cryptography
 
         private static void Init(IBufferedCipher cipher, bool forEncryption, ReadOnlySpan<byte> key, byte[] nonce)
         {
-            cipher.Init(forEncryption, new AeadParameters(new KeyParameter(key), 16 * 8, nonce, null));
+            cipher.Init(forEncryption, new AeadParameters(new KeyParameter(key), 16 * 8, nonce));
         }
 
         private static IBufferedCipher CreateCipher()
