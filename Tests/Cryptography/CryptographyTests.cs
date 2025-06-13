@@ -161,17 +161,45 @@ namespace DevOnBike.Security.Tests.Cryptography
             Assert.True(decrypted.SequenceEqual(bytes));
         }
 
+        [Fact]
+        public void XChaCha20Poly1305_Compare_ShouldWork()
+        {
+            var key = CreateXChaChaKey();
+
+            using var secret = new Secret(key);
+
+            var bc = CreateBouncyCastleXChaCha20Poly1305();
+            var ms = CreateMicrosoftXChaCha20Poly1305();
+
+            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+            var encrypted = bc.Encrypt(secret, bytes);
+            var decrypted = ms.Decrypt(secret, encrypted);
+            Assert.True(decrypted.SequenceEqual(bytes));
+
+            encrypted = ms.Encrypt(secret, bytes);
+            decrypted = bc.Decrypt(secret, encrypted);
+
+            Assert.True(decrypted.SequenceEqual(bytes));
+        }
+
         private BouncyCastleXChaCha20Poly1305 CreateBouncyCastleXChaCha20Poly1305()
         {
-            var random = new DefaultRandom();
+            return CreateBouncyCastleXChaCha20Poly1305(new DefaultRandom());
+        }
 
+        private BouncyCastleXChaCha20Poly1305 CreateBouncyCastleXChaCha20Poly1305(IRandom random)
+        {
             return new BouncyCastleXChaCha20Poly1305(random);
         }
 
         private MicrosoftXChaCha20Poly1305 CreateMicrosoftXChaCha20Poly1305()
         {
-            var random = new DefaultRandom();
+            return CreateMicrosoftXChaCha20Poly1305(new DefaultRandom());
+        }
 
+        private MicrosoftXChaCha20Poly1305 CreateMicrosoftXChaCha20Poly1305(IRandom random)
+        {
             return new MicrosoftXChaCha20Poly1305(random);
         }
 
