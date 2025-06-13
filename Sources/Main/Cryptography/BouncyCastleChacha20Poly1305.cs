@@ -53,8 +53,8 @@ namespace DevOnBike.Heimdall.Cryptography
         {
             var chacha = CreateCipher();
             var nonce = CreateNonceBuffer();
-            var tag = new byte[TagSizeInBytes];
-            var keyBuffer = new byte[key.Length];
+            var tag = CreateTagBuffer();
+            var keyBuffer = CreateKeyBuffer();
 
             fixed (byte* __unused__0 = nonce)
             fixed (byte* __unused__1 = tag)

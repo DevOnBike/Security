@@ -46,32 +46,35 @@ namespace DevOnBike.Heimdall.Cryptography
             return output; // nonce + tag + encrypted
         }
 
-        /// <inheritdoc/>
         public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
-            var nonce = new byte[NonceSizeInBytes];
-            Buffer.BlockCopy(toDecrypt, 0, nonce, 0, nonce.Length);
-            
-            var tag = new byte[TagSizeInBytes];
-            Buffer.BlockCopy(toDecrypt, nonce.Length, tag, 0, tag.Length);
-            
-            var encrypted = new byte[toDecrypt.Length - nonce.Length - tag.Length];
-            Buffer.BlockCopy(toDecrypt, nonce.Length + tag.Length, encrypted, 0, encrypted.Length);
-            
-            var output = new byte[encrypted.Length];
-            var keyBytes = new byte[key.Length];
-            
-            fixed (byte* __unused__ = keyBytes)
-            {
-                key.Fill(keyBytes);
-                
-                using var safeBytes = new SafeByteArray(keyBytes);
-                using var chacha = new ChaCha20Poly1305(safeBytes);
+            var nonce = CreateNonceBuffer();
+            var tag = CreateTagBuffer();
+            var keyBuffer = CreateKeyBuffer();
+            var output = new byte[GetDataLength(toDecrypt)];
 
-                chacha.Decrypt(nonce, encrypted, tag, output);
+            fixed (byte* __unused__0 = nonce)
+            fixed (byte* __unused__1 = tag)
+            fixed (byte* __unused__2 = keyBuffer)
+            {
+                using var safeTag = new SafeByteArray(tag);
+                using var safeNonce = new SafeByteArray(nonce);
+                using var safeKey = new SafeByteArray(keyBuffer);
+
+                key.Fill(keyBuffer);
+
+                ExtractNonce(toDecrypt, safeNonce);
+                ExtractTag(toDecrypt, safeTag);
+
+                var encrypted = new byte[output.Length];
+                ExtractData(toDecrypt, encrypted);
+
+                using var chacha = new ChaCha20Poly1305(safeKey);
+
+                chacha.Decrypt(safeNonce, encrypted, safeTag, output);
             }
 
-            return output;
+            return output; // decrypted data only
         }
     }
 }

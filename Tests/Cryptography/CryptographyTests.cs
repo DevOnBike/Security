@@ -117,11 +117,10 @@ namespace DevOnBike.Security.Tests.Cryptography
         [Fact]
         public void MicrosoftChaCha20Poly1305_EncryptDecrypt_ShouldReturnOriginalData()
         {
-            var random = new BouncyCastleRandom();
+            var random = new DefaultRandom();
 
             // Generate a random 32-byte (256-bit) key for ChaCha20
-            var key = new byte[ChaCha20Constants.KeySizeInBytes];
-            random.Fill(key);
+            var key = CreateChaChaKey();
 
             using var secret = new Secret(key);
 
@@ -129,8 +128,7 @@ namespace DevOnBike.Security.Tests.Cryptography
             var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
             var encrypted = cryptor.Encrypt(secret, bytes);
-            Assert.True(encrypted.Length ==
-                        bytes.Length + ChaCha20Constants.TagSizeInBytes + ChaCha20Constants.NonceSizeInBytes);
+            Assert.True(encrypted.Length == bytes.Length + ChaCha20Constants.TagSizeInBytes + ChaCha20Constants.NonceSizeInBytes);
 
             var decrypted = cryptor.Decrypt(secret, encrypted);
             Assert.True(decrypted.SequenceEqual(bytes));
