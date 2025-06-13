@@ -10,6 +10,65 @@ namespace DevOnBike.Security.Tests.Cryptography
     public class CryptographyTests
     {
         [Fact]
+        public void MS_Encrypt_Then_Decrypt_Should_Return_Original_Plaintext()
+        {
+            // --- ARRANGE ---
+
+            // 1. Define cryptographic parameters.
+            // In a real application, the key must be securely stored and managed.
+            // The key must be exactly 32 bytes (256 bits).
+            var key = new byte[32];
+            RandomNumberGenerator.Fill(key);
+
+            // The nonce must be exactly 12 bytes (96 bits).
+            // It's crucial to use a unique nonce for each encryption with the same key.
+            var nonce = new byte[12];
+            RandomNumberGenerator.Fill(nonce);
+
+            // 2. Define the data to be protected.
+            const string originalPlaintext = "This is a secret message that should be successfully recovered.";
+            var plaintextBytes = Encoding.UTF8.GetBytes(originalPlaintext);
+
+            // Optional: Define associated data to be authenticated but not encrypted.
+            var associatedDataBytes = Encoding.UTF8.GetBytes("Request-ID:12345");
+
+            // 3. Prepare buffers for the encryption output.
+            var ciphertextBytes = new byte[plaintextBytes.Length];
+            var tag = new byte[16]; // ChaCha20Poly1305 tag is always 16 bytes.
+
+
+            // --- ACT (ENCRYPTION) ---
+
+            // Instantiate the cipher with the key and perform encryption.
+            using (var chachaEncrypt = new ChaCha20Poly1305(key))
+            {
+                chachaEncrypt.Encrypt(nonce, plaintextBytes, ciphertextBytes, tag, associatedDataBytes);
+            }
+
+
+            // --- ACT (DECRYPTION) ---
+
+            // Prepare a buffer for the decryption output.
+            var decryptedBytes = new byte[ciphertextBytes.Length];
+
+            // Instantiate a new cipher instance with the same key to perform decryption.
+            using (var chachaDecrypt = new ChaCha20Poly1305(key))
+            {
+                // The Decrypt method will throw an AuthenticationTagMismatchException if any
+                // of the inputs (key, nonce, ciphertext, tag, associated data) are incorrect.
+                chachaDecrypt.Decrypt(nonce, ciphertextBytes, tag, decryptedBytes, associatedDataBytes);
+            }
+
+            var decryptedPlaintext = Encoding.UTF8.GetString(decryptedBytes);
+
+
+            // --- ASSERT ---
+
+            // Verify that the plaintext recovered after decryption is identical to the original.
+            Assert.Equal(originalPlaintext, decryptedPlaintext);
+        }
+
+        [Fact]
         public void BouncyCastleXChacha_EncryptThenDecrypt_ShouldReturnOriginal_Plaintext()
         {
             // Arrange
