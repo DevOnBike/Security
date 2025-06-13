@@ -10,14 +10,30 @@ namespace DevOnBike.Security.Tests.Cryptography
     public class CryptographyTests
     {
         [Fact]
-        public void Encrypt_Then_Decrypt_Should_Return_Original_Plaintext()
+        public void BouncyCastleXChacha_EncryptThenDecrypt_ShouldReturnOriginal_Plaintext()
         {
             // Arrange
             var originalPlaintext = Encoding.UTF8.GetBytes("This is a secret message for XChaCha20-Poly1305!");
 
             // Act
             var key = CreateXChaChaKey();
-            var chacha = CreateXChaCha20Poly1305();
+            var chacha = CreateBouncyCastleXChaCha20Poly1305();
+            var ciphertext = chacha.Encrypt(key, originalPlaintext);
+            var decryptedPlaintext = chacha.Decrypt(key, ciphertext);
+
+            // Assert
+            Assert.Equal(originalPlaintext, decryptedPlaintext);
+        }
+
+        [Fact]
+        public void MicrosoftXChaCha_EncryptThenDecrypt_ShouldReturnOriginal_Plaintext()
+        {
+            // Arrange
+            var originalPlaintext = Encoding.UTF8.GetBytes("This is a secret message for XChaCha20-Poly1305!");
+
+            // Act
+            var key = CreateXChaChaKey();
+            var chacha = CreateMicrosoftXChaCha20Poly1305();
             var ciphertext = chacha.Encrypt(key, originalPlaintext);
             var decryptedPlaintext = chacha.Decrypt(key, ciphertext);
 
@@ -31,7 +47,7 @@ namespace DevOnBike.Security.Tests.Cryptography
             // Arrange
             var originalPlaintext = Encoding.UTF8.GetBytes("Another secret message.");
             var key = CreateXChaChaKey();
-            var chacha = CreateXChaCha20Poly1305();
+            var chacha = CreateBouncyCastleXChaCha20Poly1305();
             var ciphertext = chacha.Encrypt(key, originalPlaintext);
 
             // Act: Tamper with the encrypted data itself. It's located after the nonce.
@@ -51,7 +67,7 @@ namespace DevOnBike.Security.Tests.Cryptography
         {
             // Arrange
             var key = CreateXChaChaKey();
-            var chacha = CreateXChaCha20Poly1305();
+            var chacha = CreateBouncyCastleXChaCha20Poly1305();
             var originalPlaintext = Encoding.UTF8.GetBytes("A message with a tampered nonce.");
             var ciphertext = chacha.Encrypt(key, originalPlaintext);
 
@@ -69,7 +85,7 @@ namespace DevOnBike.Security.Tests.Cryptography
         {
             // Arrange
             var key = CreateXChaChaKey();
-            var chacha = CreateXChaCha20Poly1305();
+            var chacha = CreateBouncyCastleXChaCha20Poly1305();
             var originalPlaintext = Encoding.UTF8.GetBytes("A message for a specific key.");
             var ciphertext = chacha.Encrypt(key, originalPlaintext);
 
@@ -85,7 +101,7 @@ namespace DevOnBike.Security.Tests.Cryptography
         {
             // Arrange
             var key = CreateXChaChaKey();
-            var chacha = CreateXChaCha20Poly1305();
+            var chacha = CreateBouncyCastleXChaCha20Poly1305();
             var emptyPlaintext = Array.Empty<byte>();
 
             // Act
@@ -145,11 +161,18 @@ namespace DevOnBike.Security.Tests.Cryptography
             Assert.True(decrypted.SequenceEqual(bytes));
         }
 
-        private BouncyCastleXChaCha20Poly1305 CreateXChaCha20Poly1305()
+        private BouncyCastleXChaCha20Poly1305 CreateBouncyCastleXChaCha20Poly1305()
         {
             var random = new DefaultRandom();
 
             return new BouncyCastleXChaCha20Poly1305(random);
+        }
+
+        private MicrosoftXChaCha20Poly1305 CreateMicrosoftXChaCha20Poly1305()
+        {
+            var random = new DefaultRandom();
+
+            return new MicrosoftXChaCha20Poly1305(random);
         }
 
         private ISecret CreateXChaChaKey()
