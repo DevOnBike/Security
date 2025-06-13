@@ -39,13 +39,14 @@ namespace DevOnBike.Heimdall.Cryptography
                 chacha.Encrypt(safeNonce, toEncrypt, encrypted, safeTag);
 
                 FillNonce(output, safeNonce);
-                FillTag(output, tag);
+                FillTag(output, safeTag);
                 FillData(output, encrypted);
             }
 
             return output; // nonce + tag + encrypted
         }
 
+        /// <inheritdoc/>
         public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
             var nonce = CreateNonceBuffer();
