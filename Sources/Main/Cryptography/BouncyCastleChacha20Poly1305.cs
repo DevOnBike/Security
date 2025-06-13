@@ -8,7 +8,7 @@ using static DevOnBike.Heimdall.Cryptography.ChaCha20Constants;
 
 namespace DevOnBike.Heimdall.Cryptography
 {
-    public class BouncyCastleChaCha20Poly1305 : IChaCha20Poly1305
+    public class BouncyCastleChaCha20Poly1305 : AbstractChaCha20Poly1305, IChaCha20Poly1305
     {
         private readonly IRandom _random;
 
@@ -17,6 +17,7 @@ namespace DevOnBike.Heimdall.Cryptography
             _random = random;
         }
 
+        /// <inheritdoc/>
         public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
             var chacha = CreateCipher();
@@ -34,7 +35,7 @@ namespace DevOnBike.Heimdall.Cryptography
                 using var safeNonce = new SafeByteArray(nonce);
 
                 Init(chacha, true, safeKey, safeNonce);
-                var result = chacha.DoFinal(toEncrypt); // data + tag
+                var result = chacha.DoFinal(toEncrypt); // encrypted + tag
 
                 Buffer.BlockCopy(safeNonce, 0, output, 0, NonceSizeInBytes);
                 Buffer.BlockCopy(result, 0, output, NonceSizeInBytes + TagSizeInBytes, toEncrypt.Length);
@@ -44,6 +45,7 @@ namespace DevOnBike.Heimdall.Cryptography
             return output; // nonce + tag + encrypted
         }
 
+        /// <inheritdoc/>
         public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
             var chacha = CreateCipher();
@@ -65,7 +67,7 @@ namespace DevOnBike.Heimdall.Cryptography
                 Buffer.BlockCopy(toDecrypt, NonceSizeInBytes, safeTag, 0, TagSizeInBytes); // tag
 
                 var encryptedLength = toDecrypt.Length - NonceSizeInBytes - TagSizeInBytes;
-                var toProcess = new byte[toDecrypt.Length - NonceSizeInBytes]; // data + tag
+                var toProcess = new byte[toDecrypt.Length - NonceSizeInBytes]; // encrypted + tag
 
                 Buffer.BlockCopy(toDecrypt, toDecrypt.Length - encryptedLength, toProcess, 0, encryptedLength);
                 Buffer.BlockCopy(tag, 0, toProcess, encryptedLength, TagSizeInBytes);
@@ -84,18 +86,6 @@ namespace DevOnBike.Heimdall.Cryptography
         private static IBufferedCipher CreateCipher()
         {
             return CipherUtilities.GetCipher("CHACHA20_POLY1305");
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] CreateNonceBuffer()
-        {
-            return new byte[NonceSizeInBytes];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] CreateKeyBuffer()
-        {
-            return new byte[KeySizeInBytes];
         }
     }
 }

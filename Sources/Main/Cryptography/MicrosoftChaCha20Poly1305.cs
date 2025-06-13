@@ -1,10 +1,11 @@
 ﻿using System.Security.Cryptography;
 using DevOnBike.Heimdall.Randomization;
 using Microsoft.AspNetCore.DataProtection;
+using static DevOnBike.Heimdall.Cryptography.ChaCha20Constants;
 
 namespace DevOnBike.Heimdall.Cryptography
 {
-    public class MicrosoftChaCha20Poly1305 : IChaCha20Poly1305
+    public class MicrosoftChaCha20Poly1305 : AbstractChaCha20Poly1305, IChaCha20Poly1305
     {
         private readonly IRandom _random;
 
@@ -13,14 +14,15 @@ namespace DevOnBike.Heimdall.Cryptography
             _random = random;
         }
 
+        /// <inheritdoc/>
         public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
-            var nonce = new byte[ChaCha20Constants.NonceSizeInBytes];
+            var nonce = new byte[NonceSizeInBytes];
             _random.Fill(nonce);
             
             var encrypted = new byte[toEncrypt.Length];
-            var tag = new byte[ChaCha20Constants.TagSizeInBytes];
-            var keyBytes = new byte[ChaCha20Constants.KeySizeInBytes];
+            var tag = new byte[TagSizeInBytes];
+            var keyBytes = new byte[KeySizeInBytes];
             
             fixed (byte* __unused__ = keyBytes)
             {
@@ -41,12 +43,13 @@ namespace DevOnBike.Heimdall.Cryptography
             return output; // nonce + tag + encrypted
         }
 
+        /// <inheritdoc/>
         public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
-            var nonce = new byte[ChaCha20Constants.NonceSizeInBytes];
+            var nonce = new byte[NonceSizeInBytes];
             Buffer.BlockCopy(toDecrypt, 0, nonce, 0, nonce.Length);
             
-            var tag = new byte[ChaCha20Constants.TagSizeInBytes];
+            var tag = new byte[TagSizeInBytes];
             Buffer.BlockCopy(toDecrypt, nonce.Length, tag, 0, tag.Length);
             
             var encrypted = new byte[toDecrypt.Length - nonce.Length - tag.Length];
