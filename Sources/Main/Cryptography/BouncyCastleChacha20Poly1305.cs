@@ -28,6 +28,7 @@ namespace DevOnBike.Heimdall.Cryptography
             fixed (byte* __unused__2 = keyBuffer)
             {
                 key.Fill(keyBuffer);
+
                 _random.Fill(nonce);
 
                 using var safeKey = new SafeByteArray(keyBuffer);

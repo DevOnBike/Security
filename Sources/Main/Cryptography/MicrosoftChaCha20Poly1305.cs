@@ -17,28 +17,31 @@ namespace DevOnBike.Heimdall.Cryptography
         /// <inheritdoc/>
         public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
-            var nonce = new byte[NonceSizeInBytes];
-            _random.Fill(nonce);
-            
+            var output = new byte[GetEncryptionTotalLength(toEncrypt)];
+            var nonce = CreateNonceBuffer();
+            var tag = CreateTagBuffer();
+            var keyBuffer = CreateKeyBuffer();
             var encrypted = new byte[toEncrypt.Length];
-            var tag = new byte[TagSizeInBytes];
-            var keyBytes = new byte[KeySizeInBytes];
-            
-            fixed (byte* __unused__ = keyBytes)
+
+            fixed (byte* __unused__0 = keyBuffer)
+            fixed (byte* __unused__1 = tag)
+            fixed (byte* __unused__2 = nonce)
             {
-                key.Fill(keyBytes);
-                
-                using var safeBytes = new SafeByteArray(keyBytes);
-                using var chacha = new ChaCha20Poly1305(safeBytes);
+                key.Fill(keyBuffer);
 
-                chacha.Encrypt(nonce, toEncrypt, encrypted, tag);
+                _random.Fill(nonce);
+
+                using var safeKey = new SafeByteArray(keyBuffer);
+                using var safeTag = new SafeByteArray(tag);
+                using var safeNonce = new SafeByteArray(nonce);
+                using var chacha = new ChaCha20Poly1305(safeKey);
+
+                chacha.Encrypt(safeNonce, toEncrypt, encrypted, safeTag);
+
+                FillNonce(output, safeNonce);
+                FillTag(output, tag);
+                FillData(output, encrypted);
             }
-
-            var output = new byte[encrypted.Length + nonce.Length + tag.Length]; 
-
-            Buffer.BlockCopy(nonce, 0, output, 0, nonce.Length);
-            Buffer.BlockCopy(tag, 0, output, nonce.Length, tag.Length);
-            Buffer.BlockCopy(encrypted, 0, output, nonce.Length + tag.Length, encrypted.Length);
 
             return output; // nonce + tag + encrypted
         }

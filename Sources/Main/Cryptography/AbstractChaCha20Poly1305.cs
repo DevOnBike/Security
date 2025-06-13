@@ -12,6 +12,12 @@ namespace DevOnBike.Heimdall.Cryptography
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual byte[] CreateTagBuffer()
+        {
+            return new byte[TagSizeInBytes];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual byte[] CreateKeyBuffer()
         {
             return new byte[KeySizeInBytes];
