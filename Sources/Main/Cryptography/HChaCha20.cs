@@ -1,4 +1,6 @@
-﻿namespace DevOnBike.Heimdall.Cryptography
+﻿using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants;
+
+namespace DevOnBike.Heimdall.Cryptography
 {
     /// <summary>
     /// A pure C# implementation of the HChaCha20 function as specified in RFC 8439, Section 2.3.
@@ -8,17 +10,31 @@
     {
         public static byte[] DeriveSubKey(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
         {
-            if (key.Length != 32) throw new ArgumentException("Key must be 32 bytes.", nameof(key));
-            if (nonce.Length != 16) throw new ArgumentException("Nonce must be 16 bytes.", nameof(nonce));
+            var subKey = CreateSubKeyBuffer();
 
+            DeriveSubKey(key, nonce, subKey);
+
+            return subKey;
+        }
+
+        public static void DeriveSubKey(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce, Span<byte> subKey)
+        {
             var state = new uint[16];
+
             state[0] = 0x61707865; // "expa"
             state[1] = 0x3320646e; // "nd 3"
             state[2] = 0x79622d32; // "2-by"
             state[3] = 0x6b206574; // "te k"
 
-            for (var i = 0; i < 8; ++i) state[4 + i] = ReadU32LE(key, i * 4);
-            for (var i = 0; i < 4; ++i) state[12 + i] = ReadU32LE(nonce, i * 4);
+            for (var i = 0; i < 8; ++i)
+            {
+                state[4 + i] = ReadU32LE(key, i * 4);
+            }
+
+            for (var i = 0; i < 4; ++i)
+            {
+                state[12 + i] = ReadU32LE(nonce, i * 4);
+            }
 
             var workingState = (uint[])state.Clone();
 
@@ -34,7 +50,6 @@
                 QuarterRound(ref workingState[3], ref workingState[4], ref workingState[9], ref workingState[14]);
             }
 
-            var subKey = new byte[32];
             WriteU32LE(subKey, 0, state[0] + workingState[0]);
             WriteU32LE(subKey, 4, state[1] + workingState[1]);
             WriteU32LE(subKey, 8, state[2] + workingState[2]);
@@ -43,8 +58,11 @@
             WriteU32LE(subKey, 20, state[13] + workingState[13]);
             WriteU32LE(subKey, 24, state[14] + workingState[14]);
             WriteU32LE(subKey, 28, state[15] + workingState[15]);
+        }
 
-            return subKey;
+        public static byte[] CreateSubKeyBuffer()
+        {
+            return new byte[SubKeySizeInBytes];
         }
 
         private static void QuarterRound(ref uint a, ref uint b, ref uint c, ref uint d)

@@ -147,7 +147,7 @@ namespace DevOnBike.Security.Tests.Cryptography
 
         private BouncyCastleXChaCha20Poly1305 CreateXChaCha20Poly1305()
         {
-            var random = new BouncyCastleRandom();
+            var random = new DefaultRandom();
 
             return new BouncyCastleXChaCha20Poly1305(random);
         }

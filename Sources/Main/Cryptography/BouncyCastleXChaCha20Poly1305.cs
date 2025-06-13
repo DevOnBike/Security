@@ -1,7 +1,11 @@
 ﻿using DevOnBike.Heimdall.Randomization;
 using Microsoft.AspNetCore.DataProtection;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
+using System.Runtime.CompilerServices;
+using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants;
 
 namespace DevOnBike.Heimdall.Cryptography
 {
@@ -17,79 +21,106 @@ namespace DevOnBike.Heimdall.Cryptography
             _random = random;
         }
 
-        public byte[] Encrypt(ISecret key, byte[] toEncrypt)
+        public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
-            var keyBytes = new byte[XChaCha20Constants.KeySizeInBytes]; // No ambiguity now
-            key.Fill(keyBytes);
+            var chacha = CreateCipher();
+            var keyBuffer = CreateKeyBuffer();
+            var nonce = CreateNonceBuffer();
+            var subKey = HChaCha20.CreateSubKeyBuffer();
 
-            // 1. Generate the 24-byte nonce.
-            var nonce = new byte[XChaCha20Constants.NonceSizeInBytes];
-            _random.Fill(nonce);
+            fixed (byte* __unused__0 = nonce)
+            fixed (byte* __unused__1 = keyBuffer)
+            fixed (byte* __unused__2 = subKey)
+            {
+                using var safeNonce = new SafeByteArray(nonce);
+                using var safeKey = new SafeByteArray(keyBuffer);
+                using var safeSubKey = new SafeByteArray(subKey);
 
-            // 2. Derive the sub-key using HChaCha20.
-            var hChaChaNonce = new ReadOnlySpan<byte>(nonce, 0, 16);
-            var subKey = HChaCha20.DeriveSubKey(keyBytes, hChaChaNonce);
+                key.Fill(safeKey);
 
-            // 3. Prepare the 12-byte nonce for the ChaCha20 engine.
-            var chaChaNonce = new byte[12];
-            // The first 4 bytes are 0, the rest is the last part of the original nonce.
-            Buffer.BlockCopy(nonce, 16, chaChaNonce, 4, 8);
+                _random.Fill(safeNonce); // 1. Generate the 24-byte nonce.
 
-            // 4. Encrypt using Bouncy Castle's standard engine.
-            var cipher = new ChaCha20Poly1305();
-            var parameters = new AeadParameters(new KeyParameter(subKey), XChaCha20Constants.TagSizeInBytes * 8, chaChaNonce);
-            cipher.Init(true, parameters);
+                // 2. Derive the sub-key using HChaCha20.
+                HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);
 
-            var ciphertext = new byte[cipher.GetOutputSize(toEncrypt.Length)];
-            var len = cipher.ProcessBytes(toEncrypt, 0, toEncrypt.Length, ciphertext, 0);
-            cipher.DoFinal(ciphertext, len);
+                // 3. Prepare the 12-byte nonce for the ChaCha20 engine.
+                var chaChaNonce = new byte[12];
+                // The first 4 bytes are 0, the rest is the last part of the original nonce.
+                Buffer.BlockCopy(safeNonce, 16, chaChaNonce, 4, 8);
 
-            // 5. Combine into a single payload: nonce + ciphertext (which includes the tag)
-            var output = new byte[XChaCha20Constants.NonceSizeInBytes + ciphertext.Length];
-            Buffer.BlockCopy(nonce, 0, output, 0, XChaCha20Constants.NonceSizeInBytes);
-            Buffer.BlockCopy(ciphertext, 0, output, XChaCha20Constants.NonceSizeInBytes, ciphertext.Length);
+                // 4. Encrypt using Bouncy Castle's engine.
+                Init(chacha, true, safeSubKey, chaChaNonce);
+                var result = chacha.DoFinal(toEncrypt);
 
-            // Clear sensitive data
-            Array.Clear(keyBytes, 0, keyBytes.Length);
-            Array.Clear(subKey, 0, subKey.Length);
+                // 5. Combine into a single payload: nonce + cipher text (which includes the tag)
+                var output = new byte[NonceSizeInBytes + result.Length];
 
-            return output;
+                Buffer.BlockCopy(safeNonce, 0, output, 0, NonceSizeInBytes);
+                Buffer.BlockCopy(result, 0, output, NonceSizeInBytes, result.Length);
+
+                return output;
+            }
         }
 
-        public byte[] Decrypt(ISecret key, byte[] toDecrypt)
+        public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
-            var keyBytes = new byte[XChaCha20Constants.KeySizeInBytes];
-            key.Fill(keyBytes);
+            var chacha = CreateCipher();
+            var keyBuffer = CreateKeyBuffer();
+            var nonce = CreateNonceBuffer();
+            var subKey = HChaCha20.CreateSubKeyBuffer();
 
-            // 1. Deconstruct the payload.
-            var nonce = new byte[XChaCha20Constants.NonceSizeInBytes];
-            Buffer.BlockCopy(toDecrypt, 0, nonce, 0, XChaCha20Constants.NonceSizeInBytes);
+            fixed (byte* __unused__0 = nonce)
+            fixed (byte* __unused__1 = keyBuffer)
+            fixed (byte* __unused__2 = subKey)
+            {
+                using var safeNonce = new SafeByteArray(nonce);
+                using var safeKey = new SafeByteArray(keyBuffer);
+                using var safeSubKey = new SafeByteArray(subKey);
 
-            var ciphertextWithTag = new byte[toDecrypt.Length - XChaCha20Constants.NonceSizeInBytes];
-            Buffer.BlockCopy(toDecrypt, XChaCha20Constants.NonceSizeInBytes, ciphertextWithTag, 0, ciphertextWithTag.Length);
+                key.Fill(safeKey);
 
-            // 2. Derive the sub-key using HChaCha20.
-            var hChaChaNonce = new ReadOnlySpan<byte>(nonce, 0, 16);
-            var subKey = HChaCha20.DeriveSubKey(keyBytes, hChaChaNonce);
+                // 1. Deconstruct the payload.
+                Buffer.BlockCopy(toDecrypt, 0, safeNonce, 0, NonceSizeInBytes);
 
-            // 3. Prepare the 12-byte nonce for the ChaCha20 engine.
-            var chaChaNonce = new byte[12];
-            Buffer.BlockCopy(nonce, 16, chaChaNonce, 4, 8);
+                var toProcess = new byte[toDecrypt.Length - NonceSizeInBytes];
+                Buffer.BlockCopy(toDecrypt, NonceSizeInBytes, toProcess, 0, toProcess.Length);
 
-            // 4. Decrypt using Bouncy Castle's engine.
-            var cipher = new ChaCha20Poly1305();
-            var parameters = new AeadParameters(new KeyParameter(subKey), XChaCha20Constants.TagSizeInBytes * 8, chaChaNonce);
-            cipher.Init(false, parameters);
+                // 2. Derive the sub-key using HChaCha20.
+                HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);
 
-            var plaintext = new byte[cipher.GetOutputSize(ciphertextWithTag.Length)];
-            var len = cipher.ProcessBytes(ciphertextWithTag, 0, ciphertextWithTag.Length, plaintext, 0);
-            cipher.DoFinal(plaintext, len);
+                // 3. Prepare the 12-byte nonce for the ChaCha20 engine.
+                var chaChaNonce = new byte[12];
+                Buffer.BlockCopy(safeNonce, 16, chaChaNonce, 4, 8);
 
-            // Clear sensitive data
-            Array.Clear(keyBytes, 0, keyBytes.Length);
-            Array.Clear(subKey, 0, subKey.Length);
+                // 4. Decrypt using Bouncy Castle's engine.
+                Init(chacha, false, safeSubKey, chaChaNonce);
 
-            return plaintext;
-        }        
+                return chacha.DoFinal(toProcess);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static IBufferedCipher CreateCipher()
+        {
+            return CipherUtilities.GetCipher("CHACHA20_POLY1305");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void Init(IBufferedCipher cipher, bool forEncryption, ReadOnlySpan<byte> subKey, byte[] nonce)
+        {
+            cipher.Init(forEncryption, new AeadParameters(new KeyParameter(subKey), TagSizeInBytes * 8, nonce));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte[] CreateNonceBuffer()
+        {
+            return new byte[NonceSizeInBytes];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte[] CreateKeyBuffer()
+        {
+            return new byte[KeySizeInBytes];
+        }
     }
 }
