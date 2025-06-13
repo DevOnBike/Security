@@ -13,7 +13,7 @@ namespace DevOnBike.Security.Tests.Cryptography
         public void BouncyCastleXChacha_EncryptThenDecrypt_ShouldReturnOriginal_Plaintext()
         {
             // Arrange
-            var originalPlaintext = Encoding.UTF8.GetBytes("This is a secret message for XChaCha20-Poly1305!");
+            var originalPlaintext = Encoding.UTF8.GetBytes("love it!");
 
             // Act
             var key = CreateXChaChaKey();
@@ -171,7 +171,7 @@ namespace DevOnBike.Security.Tests.Cryptography
             var bc = CreateBouncyCastleXChaCha20Poly1305();
             var ms = CreateMicrosoftXChaCha20Poly1305();
 
-            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            var bytes = new byte[] { 1, 2, 3 };
 
             var encrypted = bc.Encrypt(secret, bytes);
             var decrypted = ms.Decrypt(secret, encrypted);

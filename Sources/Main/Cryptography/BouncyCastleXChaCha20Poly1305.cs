@@ -1,7 +1,6 @@
 ﻿using DevOnBike.Heimdall.Randomization;
 using Microsoft.AspNetCore.DataProtection;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 using System.Runtime.CompilerServices;
@@ -12,7 +11,7 @@ namespace DevOnBike.Heimdall.Cryptography
     /// <summary>
     /// Implements XChaCha20-Poly1305 authenticated encryption using the Bouncy Castle library.
     /// </summary>
-    public class BouncyCastleXChaCha20Poly1305 : IXChaCha20Poly1305
+    public class BouncyCastleXChaCha20Poly1305 : AbstractXChaCha20Poly1305, IXChaCha20Poly1305
     {
         private readonly IRandom _random;
 
@@ -21,6 +20,7 @@ namespace DevOnBike.Heimdall.Cryptography
             _random = random;
         }
 
+        /// <inheritdoc/>
         public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
             var chacha = CreateCipher();
@@ -52,16 +52,19 @@ namespace DevOnBike.Heimdall.Cryptography
                 Init(chacha, true, safeSubKey, chaChaNonce);
                 var result = chacha.DoFinal(toEncrypt);
 
+                var tag = result[(result.Length - TagSizeInBytes)..TagSizeInBytes];
+
                 // 5. Combine into a single payload: nonce + cipher text (which includes the tag)
                 var output = new byte[NonceSizeInBytes + result.Length];
 
                 Buffer.BlockCopy(safeNonce, 0, output, 0, NonceSizeInBytes);
                 Buffer.BlockCopy(result, 0, output, NonceSizeInBytes, result.Length);
 
-                return output;
+                return output; // nonce + cipher + tag
             }
         }
 
+        /// <inheritdoc/>
         public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
             var chacha = CreateCipher();
@@ -109,18 +112,6 @@ namespace DevOnBike.Heimdall.Cryptography
         private static void Init(IBufferedCipher cipher, bool forEncryption, ReadOnlySpan<byte> subKey, byte[] nonce)
         {
             cipher.Init(forEncryption, new AeadParameters(new KeyParameter(subKey), TagSizeInBytes * 8, nonce));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] CreateNonceBuffer()
-        {
-            return new byte[NonceSizeInBytes];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] CreateKeyBuffer()
-        {
-            return new byte[KeySizeInBytes];
         }
     }
 }

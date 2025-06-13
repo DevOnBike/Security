@@ -11,7 +11,7 @@ namespace DevOnBike.Heimdall.Cryptography
     /// Implements XChaCha20-Poly1305 authenticated encryption using the built-in
     /// System.Security.Cryptography classes available in modern .NET.
     /// </summary>
-    public class MicrosoftXChaCha20Poly1305 : IXChaCha20Poly1305
+    public class MicrosoftXChaCha20Poly1305 : AbstractXChaCha20Poly1305, IXChaCha20Poly1305
     {
         private readonly IRandom _random;
 
@@ -65,6 +65,7 @@ namespace DevOnBike.Heimdall.Cryptography
             }
         }
 
+        /// <inheritdoc/>
         public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
             var keyBuffer = CreateKeyBuffer();
@@ -81,11 +82,12 @@ namespace DevOnBike.Heimdall.Cryptography
 
                 key.Fill(safeKey);
 
-                // 1. Deconstruct the payload.
+                // 1. Deconstruct the payload: nonce + cipher + tag
                 Buffer.BlockCopy(toDecrypt, 0, safeNonce, 0, NonceSizeInBytes);
 
-                var tag = new ReadOnlySpan<byte>(toDecrypt, NonceSizeInBytes, TagSizeInBytes);
-                var encrypted = new ReadOnlySpan<byte>(toDecrypt, NonceSizeInBytes + TagSizeInBytes, 0);
+                var cipherLength = toDecrypt.Length - NonceSizeInBytes - TagSizeInBytes;
+                var tag = new ReadOnlySpan<byte>(toDecrypt, toDecrypt.Length - TagSizeInBytes, TagSizeInBytes);
+                var encrypted = new ReadOnlySpan<byte>(toDecrypt, NonceSizeInBytes, cipherLength);
 
                 // 2. Derive the sub-key using HChaCha20.
                 HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);
@@ -103,23 +105,11 @@ namespace DevOnBike.Heimdall.Cryptography
                 return output;
             }
         }
-                
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ChaCha20Poly1305 CreateCipher(ReadOnlySpan<byte> subKey)
         {
             return new ChaCha20Poly1305(subKey);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] CreateNonceBuffer()
-        {
-            return new byte[NonceSizeInBytes];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] CreateKeyBuffer()
-        {
-            return new byte[KeySizeInBytes];
         }
     }
 }
