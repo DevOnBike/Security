@@ -12,6 +12,8 @@ namespace DevOnBike.Heimdall.Hashing
         /// <inheritdoc />
         public int HashSizeInBytes => SHA3_256.HashSizeInBytes;
 
+        public static readonly Sha3256 Instance = new();
+
         /// <inheritdoc />
         public byte[] Hash(ReadOnlySpan<byte> source)
         {
