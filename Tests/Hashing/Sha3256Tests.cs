@@ -69,10 +69,48 @@ namespace DevOnBike.Security.Tests.Hashing
                 Convert.FromHexString("A7FFC6F8BF1ED76651C14756A061D662F580FF4DE43B49FA82D80A4B80F8434A");
 
             // Act
-            var actualHash = sut.Hash(Array.Empty<byte>());
+            var actualHash = sut.Hash([]);
 
             // Assert
             Assert.Equal(expectedHash, actualHash);
         }
+        
+        [Fact]
+        public async Task HashAsync_ShouldProduceCorrectHash()
+        {
+            // Arrange
+            // Assuming Sha3256 implements IHashAsync
+            var sut = Sha3256.Instance;
+            var expectedHash = Convert.FromHexString(KnownHashForTestString);
+            await using var stream = new MemoryStream(TestData.SourceBytes);
+            
+            // Act
+            // We cast to IHashAsync to specifically test the interface contract.
+            var actualHash = await sut.HashAsync(stream, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(expectedHash, actualHash);
+        }
+        
+        [Fact]
+        public async Task SyncAndAsyncHashes_ShouldBeIdentical_ForSameData()
+        {
+            // Arrange
+            // Assuming Sha3256 implements both IHash and IHashAsync interfaces
+            var sut = new Sha3256();
+            await using var stream = new MemoryStream(TestData.SourceBytes);
+
+            // Act
+            var syncHash = sut.Hash(TestData.SourceBytes);
+            var asyncHash = await sut.HashAsync(stream, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(syncHash, asyncHash);
+        }
+        
+        // Known-good hash values for consistent test inputs.
+        private const string KnownHashForTestString = "619AB2678318DD168564E35A885D5A5C9B279C4189392DD142F9A7F66A4076C2";
+        private const string KnownHashForEmptyInput = "A7FFC6F8BF1ED76651C14756A061D662F580FF4DE43B49FA82D80A4B80F8434A";
+
     }
 }
