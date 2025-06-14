@@ -1,0 +1,25 @@
+NIST's primary recommendation for hash algorithms this year remains the SHA-2 and SHA-3 families of standards. These are considered secure and robust for a wide variety of cryptographic applications. 🛡️
+
+Secure Hash Algorithm (SHA) Families
+The current standards endorsed by NIST include several algorithms with varying output sizes to accommodate different security needs.
+
+SHA-2
+This family, specified in FIPS 180-4, is the most widely used hash algorithm family in the world. It includes:
+
+SHA-256: a popular choice for many applications, including digital signatures and blockchain technology.
+SHA-384: offers a higher level of security.
+SHA-512: provides the highest security level in the SHA-2 family.
+SHA-224, SHA-512/224, and SHA-512/256.
+SHA-3
+Defined in FIPS 202, the SHA-3 family is based on the Keccak algorithm and was developed to be a secure alternative to SHA-2. It includes:
+
+SHA3-256
+SHA3-384
+SHA3-512
+SHA3-224
+In addition to these, the SHA-3 standard also introduced two other functions called SHAKE128 and SHAKE256 (eXtendable-Output Functions), which can produce a hash of any desired length.
+
+Post-Quantum Cryptography and Hashing
+It's important to note that while NIST is actively standardizing new post-quantum cryptographic algorithms (for things like digital signatures), these new standards continue to rely on the security of existing hash functions like SHA-2 and SHA-3. The threat from quantum computers is primarily to public-key cryptography (like RSA and Elliptic Curve Cryptography), not to symmetric algorithms like hash functions.
+
+Therefore, for hashing purposes in 2025, the recommendation is to continue using a member of the SHA-2 or SHA-3 families with a security strength appropriate for your application. For most new applications, SHA-256 or SHA3-256 are excellent starting points
