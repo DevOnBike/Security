@@ -69,7 +69,7 @@ namespace DevOnBike.Security.Tests.Cryptography
         }
 
         [Fact]
-        public void BouncyCastleXChacha_EncryptThenDecrypt_ShouldReturnOriginal_Plaintext()
+        public void BouncyCastleXChacha_EncryptThenDecrypt_ShouldReturnOriginalPlaintext()
         {
             // Arrange
             var originalPlaintext = Encoding.UTF8.GetBytes("love it!");
@@ -85,7 +85,7 @@ namespace DevOnBike.Security.Tests.Cryptography
         }
 
         [Fact]
-        public void MicrosoftXChaCha_EncryptThenDecrypt_ShouldReturnOriginal_Plaintext()
+        public void MicrosoftXChaCha_EncryptThenDecrypt_ShouldReturnOriginalPlaintext()
         {
             // Arrange
             var originalPlaintext = Encoding.UTF8.GetBytes("This is a secret message for XChaCha20-Poly1305!");
@@ -184,7 +184,7 @@ namespace DevOnBike.Security.Tests.Cryptography
             using var secret = new Secret(key);
 
             IChaCha20Poly1305 cryptor = new MicrosoftChaCha20Poly1305(random);
-            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            var bytes = new byte[] { 1, 2, 3 };
 
             var encrypted = cryptor.Encrypt(secret, bytes);
             Assert.True(encrypted.Length == bytes.Length + ChaCha20Constants.TagSizeInBytes + ChaCha20Constants.NonceSizeInBytes);
@@ -194,7 +194,7 @@ namespace DevOnBike.Security.Tests.Cryptography
         }
 
         [Fact]
-        public void BouncyCastleChaCha20Poly1305_EncryptDecrypt_ShouldWork()
+        public void BouncyCastleChaCha20Poly1305_EncryptDecrypt_ShouldReturnOriginalPlaintext()
         {
             var key = CreateChaChaKey();
 
@@ -219,17 +219,17 @@ namespace DevOnBike.Security.Tests.Cryptography
 
             using var secret = new Secret(key);
 
-            IChaCha20Poly1305 bcProtector = new BouncyCastleChaCha20Poly1305(random);
-            IChaCha20Poly1305 msProtector = new MicrosoftChaCha20Poly1305(random);
+            IChaCha20Poly1305 bc = new BouncyCastleChaCha20Poly1305(random);
+            IChaCha20Poly1305 ms = new MicrosoftChaCha20Poly1305(random);
 
             var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
-            var encrypted = bcProtector.Encrypt(secret, bytes);
-            var decrypted = msProtector.Decrypt(secret, encrypted);
+            var encrypted = bc.Encrypt(secret, bytes);
+            var decrypted = ms.Decrypt(secret, encrypted);
             Assert.True(decrypted.SequenceEqual(bytes));
 
-            encrypted = msProtector.Encrypt(secret, bytes);
-            decrypted = bcProtector.Decrypt(secret, encrypted);
+            encrypted = ms.Encrypt(secret, bytes);
+            decrypted = bc.Decrypt(secret, encrypted);
 
             Assert.True(decrypted.SequenceEqual(bytes));
         }

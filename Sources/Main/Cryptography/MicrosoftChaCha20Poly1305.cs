@@ -68,6 +68,7 @@ namespace DevOnBike.Heimdall.Cryptography
                 ExtractTag(toDecrypt, safeTag);
 
                 var encrypted = new byte[output.Length];
+                
                 ExtractData(toDecrypt, encrypted);
 
                 using var chacha = new ChaCha20Poly1305(safeKey);

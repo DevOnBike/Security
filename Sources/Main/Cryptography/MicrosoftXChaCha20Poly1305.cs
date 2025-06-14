@@ -22,8 +22,10 @@ namespace DevOnBike.Heimdall.Cryptography
 
         public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
+            var output = new byte[GetEncryptionTotalLength(toEncrypt)];
             var keyBuffer = CreateKeyBuffer();
             var nonce = CreateNonceBuffer();
+            var tag = CreateTagBuffer();
             var subKey = HChaCha20.CreateSubKeyBuffer();
 
             fixed (byte* __unused__0 = nonce)
@@ -31,35 +33,33 @@ namespace DevOnBike.Heimdall.Cryptography
             fixed (byte* __unused__2 = subKey)
             {
                 using var safeNonce = new SafeByteArray(nonce);
+                using var safeTag = new SafeByteArray(tag);
                 using var safeKey = new SafeByteArray(keyBuffer);
                 using var safeSubKey = new SafeByteArray(subKey);
 
                 key.Fill(safeKey);
 
-                _random.Fill(safeNonce); // 1. Generate the 24-byte nonce.
+                // 1. Generate the 24-byte nonce.
+                _random.Fill(safeNonce); 
 
                 // 2. Derive the sub-key using HChaCha20.
                 HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);
 
                 // 3. Prepare the 12-byte nonce for the ChaCha20 engine.
                 var chaChaNonce = new byte[12];
-                // The first 4 bytes are 0, the rest is the last part of the original nonce.
                 Buffer.BlockCopy(safeNonce, 16, chaChaNonce, 4, 8);
 
                 // 4. Encrypt using the built-in ChaCha20Poly1305 class.
                 using var chacha = CreateCipher(safeSubKey);
 
                 var encrypted = new byte[toEncrypt.Length];
-                var tag = new byte[TagSizeInBytes];
 
                 chacha.Encrypt(chaChaNonce, toEncrypt, encrypted, tag);
 
                 // 5. Combine into a single payload, [24-byte nonce] + [16-byte tag] + [ciphertext]
-                var output = new byte[NonceSizeInBytes + TagSizeInBytes + encrypted.Length];
-
-                Buffer.BlockCopy(nonce, 0, output, 0, NonceSizeInBytes);
-                Buffer.BlockCopy(tag, 0, output, NonceSizeInBytes, TagSizeInBytes);
-                Buffer.BlockCopy(encrypted, 0, output, NonceSizeInBytes + TagSizeInBytes, encrypted.Length);
+                FillNonce(output, safeNonce);
+                FillTag(output, safeTag);
+                FillData(output, encrypted);
 
                 return output;
             }
@@ -70,24 +70,24 @@ namespace DevOnBike.Heimdall.Cryptography
         {
             var keyBuffer = CreateKeyBuffer();
             var nonce = CreateNonceBuffer();
+            var tag = CreateTagBuffer();
             var subKey = HChaCha20.CreateSubKeyBuffer();
+            var output = new byte[GetDataLength(toDecrypt)];
 
             fixed (byte* __unused__0 = nonce)
             fixed (byte* __unused__1 = keyBuffer)
             fixed (byte* __unused__2 = subKey)
             {
                 using var safeNonce = new SafeByteArray(nonce);
+                using var safeTag = new SafeByteArray(tag);
                 using var safeKey = new SafeByteArray(keyBuffer);
                 using var safeSubKey = new SafeByteArray(subKey);
 
                 key.Fill(safeKey);
 
                 // 1. Deconstruct the payload: nonce + cipher + tag
-                Buffer.BlockCopy(toDecrypt, 0, safeNonce, 0, NonceSizeInBytes);
-
-                var cipherLength = toDecrypt.Length - NonceSizeInBytes - TagSizeInBytes;
-                var tag = new ReadOnlySpan<byte>(toDecrypt, toDecrypt.Length - TagSizeInBytes, TagSizeInBytes);
-                var encrypted = new ReadOnlySpan<byte>(toDecrypt, NonceSizeInBytes, cipherLength);
+                ExtractNonce(toDecrypt, safeNonce);
+                ExtractTag(toDecrypt, safeTag);
 
                 // 2. Derive the sub-key using HChaCha20.
                 HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);
@@ -97,9 +97,12 @@ namespace DevOnBike.Heimdall.Cryptography
                 Buffer.BlockCopy(safeNonce, 16, chaChaNonce, 4, 8);
 
                 // 4. Decrypt using the built-in ChaCha20Poly1305 class.
+                var encrypted = new byte[output.Length];
+                
+                ExtractData(toDecrypt, encrypted);
+                
                 using var chacha = new ChaCha20Poly1305(subKey);
-
-                var output = new byte[encrypted.Length];
+                
                 chacha.Decrypt(chaChaNonce, encrypted, tag, output);
 
                 return output;

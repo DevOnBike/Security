@@ -24,6 +24,7 @@ namespace DevOnBike.Heimdall.Cryptography
         public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
             var chacha = CreateCipher();
+            var output = new byte[GetEncryptionTotalLength(toEncrypt)];
             var keyBuffer = CreateKeyBuffer();
             var nonce = CreateNonceBuffer();
             var subKey = HChaCha20.CreateSubKeyBuffer();
@@ -38,7 +39,8 @@ namespace DevOnBike.Heimdall.Cryptography
 
                 key.Fill(safeKey);
 
-                _random.Fill(safeNonce); // 1. Generate the 24-byte nonce.
+                // 1. Generate the 24-byte nonce.
+                _random.Fill(safeNonce); 
 
                 // 2. Derive the sub-key using HChaCha20.
                 HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);
@@ -50,17 +52,18 @@ namespace DevOnBike.Heimdall.Cryptography
 
                 // 4. Encrypt using Bouncy Castle's engine.
                 Init(chacha, true, safeSubKey, chaChaNonce);
-                var result = chacha.DoFinal(toEncrypt);
-
-                var tag = result[(result.Length - TagSizeInBytes)..TagSizeInBytes];
+                
+                var result = chacha.DoFinal(toEncrypt); // encrypted + tag
 
                 // 5. Combine into a single payload: nonce + cipher text (which includes the tag)
-                var output = new byte[NonceSizeInBytes + result.Length];
+                var encrypted = new ReadOnlySpan<byte>(result, 0, result.Length - TagSizeInBytes);
+                var tag = new ReadOnlySpan<byte>(result, result.Length - TagSizeInBytes, TagSizeInBytes);
 
-                Buffer.BlockCopy(safeNonce, 0, output, 0, NonceSizeInBytes);
-                Buffer.BlockCopy(result, 0, output, NonceSizeInBytes, result.Length);
+                FillNonce(output, safeNonce);
+                FillTag(output, tag);
+                FillData(output, encrypted);
 
-                return output; // nonce + cipher + tag
+                return output; // nonce + tag + encrypted
             }
         }
 
@@ -68,8 +71,9 @@ namespace DevOnBike.Heimdall.Cryptography
         public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
             var chacha = CreateCipher();
-            var keyBuffer = CreateKeyBuffer();
             var nonce = CreateNonceBuffer();
+            var tag = CreateTagBuffer();
+            var keyBuffer = CreateKeyBuffer();
             var subKey = HChaCha20.CreateSubKeyBuffer();
 
             fixed (byte* __unused__0 = nonce)
@@ -77,16 +81,21 @@ namespace DevOnBike.Heimdall.Cryptography
             fixed (byte* __unused__2 = subKey)
             {
                 using var safeNonce = new SafeByteArray(nonce);
+                using var safeTag = new SafeByteArray(tag);
                 using var safeKey = new SafeByteArray(keyBuffer);
                 using var safeSubKey = new SafeByteArray(subKey);
 
                 key.Fill(safeKey);
 
-                // 1. Deconstruct the payload.
-                Buffer.BlockCopy(toDecrypt, 0, safeNonce, 0, NonceSizeInBytes);
+                // 1. Deconstruct the payload: nonce + tag + encrypted
+                ExtractNonce(toDecrypt, safeNonce);
+                ExtractTag(toDecrypt, safeTag);
 
-                var toProcess = new byte[toDecrypt.Length - NonceSizeInBytes];
-                Buffer.BlockCopy(toDecrypt, NonceSizeInBytes, toProcess, 0, toProcess.Length);
+                var encryptedLength = toDecrypt.Length - NonceSizeInBytes - TagSizeInBytes;
+                var toProcess = new byte[toDecrypt.Length - NonceSizeInBytes]; // encrypted + tag
+                
+                Buffer.BlockCopy(toDecrypt, toDecrypt.Length - encryptedLength, toProcess, 0, encryptedLength); // encrypted
+                Buffer.BlockCopy(tag, 0, toProcess, encryptedLength, TagSizeInBytes); // tag
 
                 // 2. Derive the sub-key using HChaCha20.
                 HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);

@@ -62,7 +62,7 @@ namespace DevOnBike.Heimdall.Cryptography
         protected virtual void FillTag(byte[] output, byte[] tag)
         {
             // nonce + tag + encrypted
-            Buffer.BlockCopy(tag, 0, output, 0, NonceSizeInBytes);
+            Buffer.BlockCopy(tag, 0, output, NonceSizeInBytes, TagSizeInBytes);
         }
 
         protected virtual void FillTag(byte[] output, ReadOnlySpan<byte> tag)

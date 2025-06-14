@@ -27,12 +27,12 @@ namespace DevOnBike.Heimdall.Cryptography
             fixed (byte* __unused__1 = nonce)
             fixed (byte* __unused__2 = keyBuffer)
             {
+                using var safeKey = new SafeByteArray(keyBuffer);
+                using var safeNonce = new SafeByteArray(nonce);
+                
                 key.Fill(keyBuffer);
 
                 _random.Fill(nonce);
-
-                using var safeKey = new SafeByteArray(keyBuffer);
-                using var safeNonce = new SafeByteArray(nonce);
 
                 Init(chacha, true, safeKey, safeNonce);
 
