@@ -51,7 +51,7 @@ namespace DevOnBike.Heimdall.Hashing
             return $"{options.Iterations}{options.Delimiter}{Convert.ToBase64String(salt)}{options.Delimiter}{Convert.ToBase64String(hash)}";
         }
 
-        public bool VerifyPassword(string password, string storedHash)
+        public bool Verify(string password, string storedHash)
         {
             try
             {

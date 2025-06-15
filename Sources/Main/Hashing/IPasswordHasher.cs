@@ -18,7 +18,7 @@
         /// <param name="password">The password attempt.</param>
         /// <param name="storedHash">The formatted hash string from storage.</param>
         /// <returns>True if the password is correct, otherwise false.</returns>
-        public bool VerifyPassword(string password, string storedHash);
+        public bool Verify(string password, string storedHash);
     }    
 }
 
