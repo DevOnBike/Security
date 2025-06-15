@@ -1,6 +1,6 @@
 ﻿namespace DevOnBike.Heimdall.Hashing
 {
-    public interface IHash
+    public interface IHasher
     {
         /// <summary>
         /// name of hash algorithm
