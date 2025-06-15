@@ -23,3 +23,21 @@ Post-Quantum Cryptography and Hashing
 It's important to note that while NIST is actively standardizing new post-quantum cryptographic algorithms (for things like digital signatures), these new standards continue to rely on the security of existing hash functions like SHA-2 and SHA-3. The threat from quantum computers is primarily to public-key cryptography (like RSA and Elliptic Curve Cryptography), not to symmetric algorithms like hash functions.
 
 Therefore, for hashing purposes in 2025, the recommendation is to continue using a member of the SHA-2 or SHA-3 families with a security strength appropriate for your application. For most new applications, SHA-256 or SHA3-256 are excellent starting points
+
+NIST Recommendation for Password Hashing
+NIST's primary guidance for password hashing is found in Special Publication 800-63B, section 5.1.1.2. The core recommendation is to use a key derivation function (KDF) specifically designed for password hashing.
+
+These functions are intentionally slow and memory-intensive to make brute-force and dictionary attacks computationally expensive for an attacker.
+
+Key Requirements:
+Use an Approved Algorithm: NIST recommends one-way, salted, and stretched password hashing algorithms. The top recommendations are:
+
+Argon2 (The winner of the Password Hashing Competition, often considered the strongest).
+PBKDF2 (Password-Based Key Derivation Function 2).
+bcrypt.
+scrypt.
+Use a Unique Salt: A new, unique, and cryptographically random salt must be generated for every password that is hashed. This ensures that two users with the same password will have completely different hashes. NIST recommends a salt of at least 32 bytes.
+
+Use a High Work Factor (Iteration Count): The algorithm must be iterated to make it slow. The number of iterations (or "work factor") should be configured to be as high as your server can tolerate without causing unacceptable login delays (typically aiming for a verification time between 100-500 milliseconds). For PBKDF2, NIST requires a minimum of 10,000 iterations, but a much higher value is strongly recommended.
+
+Store the Hash and Parameters: The final hash, the unique salt, and all the parameters used to generate it (like the algorithm and iteration count) must be stored together for each user. This allows you to verify the password later.
