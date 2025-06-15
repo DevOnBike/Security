@@ -7,7 +7,7 @@ namespace DevOnBike.Heimdall.Hashing
     /// <summary>
     /// Provides NIST-compliant password hashing and verification using PBKDF2.
     /// </summary>
-    public class Pbkdf2PasswordHasher : IPasswordHasher
+    public class Pbkdf2PasswordHasher : IRecommendedPasswordHasher
     {
         private readonly IOptions<PasswordHasherOptions> _options;
         private readonly IRandom _random;
