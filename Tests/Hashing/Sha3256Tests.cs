@@ -25,8 +25,7 @@ namespace DevOnBike.Security.Tests.Hashing
             // Arrange
             var sut = Sha3256.Instance;
             // Known SHA3-256 hash for the test string "The quick brown fox jumps over the lazy dog"
-            var expectedHash =
-                Convert.FromHexString("619AB2678318DD168564E35A885D5A5C9B279C4189392DD142F9A7F66A4076C2");
+            var expectedHash = Convert.FromHexString("69070dda01975c8c120c3aada1b282394e7f032fa9cf32f4cb2259a0897dfc04");
 
             // Act
             var firstHash = sut.Hash(TestData.SourceBytes);
@@ -81,7 +80,7 @@ namespace DevOnBike.Security.Tests.Hashing
             // Arrange
             // Assuming Sha3256 implements IHashAsync
             var sut = Sha3256.Instance;
-            var expectedHash = Convert.FromHexString(KnownHashForTestString);
+            var expectedHash = Convert.FromHexString("69070dda01975c8c120c3aada1b282394e7f032fa9cf32f4cb2259a0897dfc04");
             await using var stream = new MemoryStream(TestData.SourceBytes);
             
             // Act
@@ -107,10 +106,5 @@ namespace DevOnBike.Security.Tests.Hashing
             // Assert
             Assert.Equal(syncHash, asyncHash);
         }
-        
-        // Known-good hash values for consistent test inputs.
-        private const string KnownHashForTestString = "619AB2678318DD168564E35A885D5A5C9B279C4189392DD142F9A7F66A4076C2";
-        private const string KnownHashForEmptyInput = "A7FFC6F8BF1ED76651C14756A061D662F580FF4DE43B49FA82D80A4B80F8434A";
-
     }
 }
