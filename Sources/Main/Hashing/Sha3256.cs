@@ -4,8 +4,9 @@ namespace DevOnBike.Heimdall.Hashing
 {
     /// <summary>
     /// hashing implementation using the SHA3-256 algorithm.
+    /// For time of writing this it runs perfectly fine under Windows 11 but throws under Windows 2022 or Windows 10
     /// </summary>
-    public sealed class Sha3256 : IRecommendedHasher
+    public sealed class Sha3256 : IHasher
     {
         public string Id => "SHA3-256";
 

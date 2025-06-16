@@ -9,7 +9,7 @@ namespace DevOnBike.Security.Tests.Hashing
         public void HashSizeInBytes_ShouldReturn32()
         {
             // Arrange
-            var sut = Sha3256.Instance;
+            var sut = CreateHasher();
             const int expectedSize = 32;
 
             // Act
@@ -23,7 +23,7 @@ namespace DevOnBike.Security.Tests.Hashing
         public void Hash_ShouldProduceCorrectAndDeterministicHash()
         {
             // Arrange
-            var sut = Sha3256.Instance;
+            var sut = CreateHasher();
             // Known SHA3-256 hash for the test string "The quick brown fox jumps over the lazy dog"
             var expectedHash = Convert.FromHexString("69070dda01975c8c120c3aada1b282394e7f032fa9cf32f4cb2259a0897dfc04");
 
@@ -46,7 +46,7 @@ namespace DevOnBike.Security.Tests.Hashing
         public void Hash_ShouldProduceDifferentHashes_ForDifferentInputs()
         {
             // Arrange
-            var sut = Sha3256.Instance;
+            var sut = CreateHasher();
             var sourceBytes1 = Encoding.UTF8.GetBytes("First input");
             var sourceBytes2 = Encoding.UTF8.GetBytes("Second input which is different");
 
@@ -62,7 +62,7 @@ namespace DevOnBike.Security.Tests.Hashing
         public void Hash_ShouldProduceCorrectHash_ForEmptyInput()
         {
             // Arrange
-            var sut = Sha3256.Instance;
+            var sut = CreateHasher();
             // Known SHA3-256 hash for an empty input
             var expectedHash =
                 Convert.FromHexString("A7FFC6F8BF1ED76651C14756A061D662F580FF4DE43B49FA82D80A4B80F8434A");
@@ -78,8 +78,7 @@ namespace DevOnBike.Security.Tests.Hashing
         public async Task HashAsync_ShouldProduceCorrectHash()
         {
             // Arrange
-            // Assuming Sha3256 implements IHashAsync
-            var sut = Sha3256.Instance;
+            var sut = CreateHasher();
             var expectedHash = Convert.FromHexString("69070dda01975c8c120c3aada1b282394e7f032fa9cf32f4cb2259a0897dfc04");
             await using var stream = new MemoryStream(TestData.SourceBytes);
             
@@ -96,7 +95,7 @@ namespace DevOnBike.Security.Tests.Hashing
         {
             // Arrange
             // Assuming Sha3256 implements both IHash and IHashAsync interfaces
-            var sut = new Sha3256();
+            var sut = CreateHasher();
             await using var stream = new MemoryStream(TestData.SourceBytes);
 
             // Act
@@ -105,6 +104,11 @@ namespace DevOnBike.Security.Tests.Hashing
 
             // Assert
             Assert.Equal(syncHash, asyncHash);
+        }
+
+        private static IHasher CreateHasher()
+        {
+            return new Sha3256Facade();
         }
     }
 }
