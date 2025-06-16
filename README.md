@@ -4,3 +4,5 @@ all around security like algorithms, approaches to common problems ready to be u
 - xchacha20 poly 1305 algorithm (pure .net + BouncyCastle - can be used interchanbly)
 - format preserving encryption (FPE using BouncyCastle)
 - default IRandom implementation
+
+[![codecov](https://codecov.io/gh/DevOnBike/Security/branch/master/graph/badge.svg)](https://codecov.io/gh/DevOnBike/Security)
