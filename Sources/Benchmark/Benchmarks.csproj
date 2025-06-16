@@ -8,6 +8,7 @@
 		<RootNamespace>DevOnBike.Security.Benchmarks</RootNamespace>
 		<AssemblyName>DevOnBike.Security.Benchmarks</AssemblyName>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
 	<ItemGroup>
