@@ -1,4 +1,5 @@
 - chacha20 poly 1305 (pure .net + BouncyCastle - can be used interchanbly)
 - xchacha20 poly 1305 algorithm (pure .net + BouncyCastle - can be used interchanbly)
 - format preserving encryption (FPE using BouncyCastle)
-- default IRandom implementation
+- default (recommended) IRandom implementation
+- hashers abstractions and implementation (for calculating digest and password hashers)

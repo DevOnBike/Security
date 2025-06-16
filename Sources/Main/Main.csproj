@@ -10,7 +10,7 @@
     <SourceRevisionId>N/A</SourceRevisionId>
     <InformationalVersion>$(Version)+$(SourceRevisionId)</InformationalVersion>
     <PackageId>DevOnBike.Heimdall</PackageId>
-    <Version>0.0.4</Version>
+    <Version>0.0.5</Version>
     <Authors>DevOnBike</Authors>
     <Description>Security powered by Heimdall</Description>
     <RepositoryUrl>https://github.com/DevOnBike/Security</RepositoryUrl>
