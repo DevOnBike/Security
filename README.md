@@ -5,4 +5,4 @@ all around security like algorithms, approaches to common problems ready to be u
 - format preserving encryption (FPE using BouncyCastle)
 - default IRandom implementation
 
-[![codecov](https://codecov.io/gh/your-username/your-repository/branch/main/graph/badge.svg)](https://codecov.io/gh/DevOnBike/Security)
+[![codecov](https://codecov.io/gh/DevOnBike/Security/branch/master/graph/badge.svg)](https://codecov.io/gh/DevOnBike/Security)
