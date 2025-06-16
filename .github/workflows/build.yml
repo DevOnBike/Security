@@ -45,9 +45,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      run: |
-        echo "Running on Windows runner"
-        Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion
 
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
