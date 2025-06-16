@@ -51,6 +51,12 @@ jobs:
         name: code-coverage-report
         path: ./coverage/report
 
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage/*/coverage.cobertura.xml
+        fail_ci_if_error: true
+
   widows:
     runs-on: windows-latest
 
