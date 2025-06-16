@@ -17,7 +17,7 @@ namespace DevOnBike.Security.Tests.Hashing
 
             // Act
             var hashedPassword = hasher.Hash(TestPassword);
-            var isPasswordCorrect = hasher.Verify(hashedPassword, TestPassword);
+            var isPasswordCorrect = hasher.Verify(TestPassword, hashedPassword);
 
             // Assert
             Assert.True(isPasswordCorrect);
@@ -88,7 +88,7 @@ namespace DevOnBike.Security.Tests.Hashing
             // Act
             // The new hasher should still be able to verify the old password because
             // the iteration count is stored inside the hash string itself.
-            var isPasswordCorrect = newHasher.Verify(oldHashedPassword, TestPassword);
+            var isPasswordCorrect = newHasher.Verify(TestPassword, oldHashedPassword);
 
             // Assert
             Assert.True(isPasswordCorrect);

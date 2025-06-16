@@ -58,6 +58,7 @@ namespace DevOnBike.Heimdall.Hashing
                 var options = _options.Value;
                 // 1. Split the stored hash string into its components.
                 var parts = storedHash.Split(options.Delimiter);
+                
                 if (parts.Length != 3)
                 {
                     // Invalid hash format.
