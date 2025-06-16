@@ -30,7 +30,7 @@ namespace DevOnBike.Heimdall.Hashing
         
         private static IHasher GetStrategy()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 return Sha3256.Instance;
             }
