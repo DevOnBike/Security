@@ -63,7 +63,7 @@ namespace DevOnBike.Security.Tests.Pqc
             var parameters = MLKemParameters.ml_kem_1024;
 
             // Act
-            var keyPair = kem.KeyGen();
+            var keyPair = kem.GenerateKeyPair();
 
             // Assert
             Assert.NotNull(keyPair.PublicKey);
@@ -78,7 +78,7 @@ namespace DevOnBike.Security.Tests.Pqc
             // Arrange
             var kem = Create();
             var parameters = MLKemParameters.ml_kem_1024;
-            var keyPair = kem.KeyGen();
+            var keyPair = kem.GenerateKeyPair();
 
             // Act
             var result = kem.Encapsulate(keyPair.PublicKey);
@@ -96,7 +96,7 @@ namespace DevOnBike.Security.Tests.Pqc
             // Arrange
             var kem = Create();
             var parameters = MLKemParameters.ml_kem_1024;
-            var keyPair = kem.KeyGen();
+            var keyPair = kem.GenerateKeyPair();
             var encapsulationResult = kem.Encapsulate(keyPair.PublicKey);
 
             // Act
@@ -114,7 +114,7 @@ namespace DevOnBike.Security.Tests.Pqc
             var kem = Create();
 
             // 1. Server generates keys
-            var serverKeyPair = kem.KeyGen();
+            var serverKeyPair = kem.GenerateKeyPair();
 
             // 2. Client uses public key to create a shared secret and ciphertext
             var clientResult = kem.Encapsulate(serverKeyPair.PublicKey);

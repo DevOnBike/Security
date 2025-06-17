@@ -24,7 +24,7 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
         }
 
         /// <inheritdoc />
-        public PqcKeyPair KeyGen()
+        public PqcKeyPair GenerateKeyPair()
         {
             var parameters = new MLKemKeyGenerationParameters(_secureRandom, _parameters);
             var generator = GeneratorUtilities.GetKeyPairGenerator("ML-KEM");
@@ -56,7 +56,7 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
         }
 
         /// <inheritdoc />
-        public byte[] Decapsulate(ReadOnlySpan<byte> privateKey, ReadOnlySpan<byte> ciphertext)
+        public byte[] Decapsulate(ReadOnlySpan<byte> privateKey, ReadOnlySpan<byte> cipherText)
         {
             var decapsulator = new MLKemDecapsulator(_parameters);
 
@@ -64,7 +64,7 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
 
             Span<byte> secret = new byte[decapsulator.SecretLength];
 
-            decapsulator.Decapsulate(ciphertext, secret);
+            decapsulator.Decapsulate(cipherText, secret);
 
             return secret.ToArray();
         }

@@ -12,7 +12,7 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
         /// Generates a new public and private key pair.
         /// </summary>
         /// <returns>A key pair containing the public and private keys.</returns>
-        PqcKeyPair KeyGen();
+        PqcKeyPair GenerateKeyPair();
 
         /// <summary>
         /// Executed by the party that wishes to establish a shared secret.
@@ -28,9 +28,9 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
         /// It uses their private key to decapsulate the ciphertext and derive the shared secret.
         /// </summary>
         /// <param name="privateKey">The recipient's private key.</param>
-        /// <param name="ciphertext">The encapsulated secret received from the other party.</param>
+        /// <param name="cipherText">The encapsulated secret received from the other party.</param>
         /// <returns>The derived shared secret.</returns>
-        byte[] Decapsulate(ReadOnlySpan<byte> privateKey, ReadOnlySpan<byte> ciphertext);
+        byte[] Decapsulate(ReadOnlySpan<byte> privateKey, ReadOnlySpan<byte> cipherText);
     }
 }
 
