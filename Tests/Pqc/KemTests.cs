@@ -1,10 +1,60 @@
-﻿using DevOnBike.Heimdall.PostQuantumComputing;
+﻿using System.Text;
+using DevOnBike.Heimdall.PostQuantumComputing;
+using DevOnBike.Heimdall.Randomization;
+using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
 
 namespace DevOnBike.Security.Tests.Pqc
 {
     public class KemTests
     {
+        [Fact]
+        public void MlDsa_SignThenVerify_ShouldWork()
+        {
+            // 1. CHOOSE ML-DSA PARAMETERS
+            // The parameter names have also been updated.
+            // MLDSA_44 was Dilithium2
+            // MLDSA_65 was Dilithium3
+            // MLDSA_87 was Dilithium5
+            var mldsaParameters = MLDsaParameters.ml_dsa_65_with_sha512; // Corresponds to NIST security level 3
+
+            // 2. GENERATE A KEY PAIR
+            var random = RecommendedSecureRandom.Instance;
+            var keyGenParameters = new MLDsaKeyGenerationParameters(random, mldsaParameters);
+            var keyPairGenerator = GeneratorUtilities.GetKeyPairGenerator("ML-DSA");
+
+            keyPairGenerator.Init(keyGenParameters);
+
+            var keyPair = keyPairGenerator.GenerateKeyPair();
+            var publicKey = (MLDsaPublicKeyParameters)keyPair.Public;
+            var privateKey = (MLDsaPrivateKeyParameters)keyPair.Private;
+
+            // 3. PREPARE A MESSAGE TO SIGN
+            var messageText = "This is a test message for the official ML-DSA signature scheme.";
+            var message = Encoding.UTF8.GetBytes(messageText);
+
+            // 4. GENERATE THE SIGNATURE
+            // Initialize the signer for signing
+
+            var signerAlgorithmOid = NistObjectIdentifiers.id_hash_ml_dsa_65_with_sha512;
+            var signer = SignerUtilities.InitSigner(signerAlgorithmOid, forSigning: true, keyPair.Private, random);
+
+            signer.BlockUpdate(message);
+
+            var signature = signer.GenerateSignature();
+
+            // 5. VERIFY THE SIGNATURE
+            // Initialize the signer for verification
+            var verifier = SignerUtilities.InitSigner(signerAlgorithmOid, forSigning: false, keyPair.Public, null);
+
+            verifier.BlockUpdate(message);
+            
+            var isSignatureValid = verifier.VerifySignature(signature);
+            
+            Assert.True(isSignatureValid);
+        }
+
         [Fact]
         public void KeyGen_ShouldGenerateKeysOfCorrectSize()
         {
@@ -68,11 +118,11 @@ namespace DevOnBike.Security.Tests.Pqc
 
             // 2. Client uses public key to create a shared secret and ciphertext
             var clientResult = kem.Encapsulate(serverKeyPair.PublicKey);
-            byte[] clientSharedSecret = clientResult.SharedSecret;
-            byte[] ciphertextToServer = clientResult.Ciphertext;
+            var clientSharedSecret = clientResult.SharedSecret;
+            var ciphertextToServer = clientResult.Ciphertext;
 
             // 3. Server uses its private key and the ciphertext to derive the secret
-            byte[] serverSharedSecret = kem.Decapsulate(serverKeyPair.PrivateKey, ciphertextToServer);
+            var serverSharedSecret = kem.Decapsulate(serverKeyPair.PrivateKey, ciphertextToServer);
 
             // Assert
             // With a real implementation, these two secrets will be identical.
