@@ -6,22 +6,30 @@ using Org.BouncyCastle.Security;
 namespace DevOnBike.Heimdall.PostQuantumComputing
 {
     /// <summary>
-    /// An implementation of the ML-KEM (CRYSTALS-Kyber) Key Encapsulation Mechanism using Bouncy Castle.
+    /// An implementation of the ML-KEM (aka CRYSTALS-Kyber) Key Encapsulation Mechanism using Bouncy Castle.
     /// This class uses the mlkem768 parameter set, which is the NIST primary recommendation.
     /// </summary>
-    public sealed class CrystalsKyber : IKeyEncapsulation
+    public sealed class CrystalsKyberEncapsulation : IKeyEncapsulation
     {
-        private static readonly MLKemParameters _parameters = MLKemParameters.ml_kem_1024;
-
+        private readonly MLKemParameters _parameters;
         private readonly SecureRandom _secureRandom = new();
+
+        public CrystalsKyberEncapsulation(MLKemParameters keyGenerationParameters)
+        {
+            _parameters = keyGenerationParameters;
+        }
+
+        public CrystalsKyberEncapsulation() : this(MLKemParameters.ml_kem_768)
+        {
+        }
 
         /// <inheritdoc />
         public PqcKeyPair KeyGen()
         {
-            var keyGenParameters = new MLKemKeyGenerationParameters(_secureRandom, _parameters);
+            var parameters = new MLKemKeyGenerationParameters(_secureRandom, _parameters);
             var generator = GeneratorUtilities.GetKeyPairGenerator("ML-KEM");
 
-            generator.Init(keyGenParameters);
+            generator.Init(parameters);
 
             var keyPair = generator.GenerateKeyPair();
             var publicKeyParams = (MLKemPublicKeyParameters)keyPair.Public;
@@ -50,10 +58,9 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
         /// <inheritdoc />
         public byte[] Decapsulate(ReadOnlySpan<byte> privateKey, ReadOnlySpan<byte> ciphertext)
         {
-            var privateKeyParams = MLKemPrivateKeyParameters.FromEncoding(_parameters, privateKey.ToArray());
             var decapsulator = new MLKemDecapsulator(_parameters);
 
-            decapsulator.Init(privateKeyParams);
+            decapsulator.Init(MLKemPrivateKeyParameters.FromEncoding(_parameters, privateKey.ToArray()));
 
             Span<byte> secret = new byte[decapsulator.SecretLength];
 

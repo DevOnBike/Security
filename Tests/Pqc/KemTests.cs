@@ -81,7 +81,7 @@ namespace DevOnBike.Security.Tests.Pqc
 
         private static IKeyEncapsulation Create()
         {
-            return new CrystalsKyber();
+            return new CrystalsKyberEncapsulation();
         }
     }
 }
