@@ -1,4 +1,5 @@
 ﻿using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
+using DevOnBike.Heimdall.Randomization;
 using Org.BouncyCastle.Crypto.Kems;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
@@ -12,30 +13,31 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
     public sealed class CrystalsKyberEncapsulation : IKeyEncapsulation
     {
         private readonly MLKemParameters _parameters;
-        private readonly SecureRandom _secureRandom = new();
+        private readonly SecureRandom _random;
 
-        public CrystalsKyberEncapsulation(MLKemParameters keyGenerationParameters)
+        public CrystalsKyberEncapsulation(SecureRandom random, MLKemParameters keyGenerationParameters)
         {
+            _random = random;
             _parameters = keyGenerationParameters;
         }
 
-        public CrystalsKyberEncapsulation() : this(MLKemParameters.ml_kem_768)
+        public CrystalsKyberEncapsulation() : this(RecommendedSecureRandom.Instance, MLKemParameters.ml_kem_768)
         {
         }
 
         /// <inheritdoc />
         public PqcKeyPair GenerateKeyPair()
         {
-            var parameters = new MLKemKeyGenerationParameters(_secureRandom, _parameters);
+            var parameters = new MLKemKeyGenerationParameters(_random, _parameters);
             var generator = GeneratorUtilities.GetKeyPairGenerator("ML-KEM");
 
             generator.Init(parameters);
 
             var keyPair = generator.GenerateKeyPair();
-            var publicKeyParams = (MLKemPublicKeyParameters)keyPair.Public;
-            var privateKeyParams = (MLKemPrivateKeyParameters)keyPair.Private;
+            var publicKey = (MLKemPublicKeyParameters)keyPair.Public;
+            var privateKey = (MLKemPrivateKeyParameters)keyPair.Private;
 
-            return new PqcKeyPair(publicKeyParams.GetEncoded(), privateKeyParams.GetEncoded());
+            return new PqcKeyPair(publicKey.GetEncoded(), privateKey.GetEncoded());
         }
 
         /// <inheritdoc />
@@ -44,7 +46,7 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
             var publicKeyParam = MLKemPublicKeyParameters.FromEncoding(_parameters, publicKey.ToArray());
             var encapsulator = new MLKemEncapsulator(_parameters);
 
-            encapsulator.Init(new ParametersWithRandom(publicKeyParam, _secureRandom));
+            encapsulator.Init(new ParametersWithRandom(publicKeyParam, _random));
 
             Span<byte> encapsulation = new byte[encapsulator.EncapsulationLength];
             Span<byte> secret = new byte[encapsulator.SecretLength];
