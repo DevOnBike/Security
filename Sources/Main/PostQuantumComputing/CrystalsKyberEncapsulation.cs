@@ -1,5 +1,6 @@
 ﻿using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
 using DevOnBike.Heimdall.Randomization;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Kems;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
@@ -28,12 +29,7 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
         /// <inheritdoc />
         public PqcKeyPair GenerateKeyPair()
         {
-            var parameters = new MLKemKeyGenerationParameters(_random, _parameters);
-            var generator = GeneratorUtilities.GetKeyPairGenerator("ML-KEM");
-
-            generator.Init(parameters);
-
-            var keyPair = generator.GenerateKeyPair();
+            var keyPair = GenerateKeyPairCore();
             var publicKey = (MLKemPublicKeyParameters)keyPair.Public;
             var privateKey = (MLKemPrivateKeyParameters)keyPair.Private;
 
@@ -69,6 +65,16 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
             decapsulator.Decapsulate(cipherText, secret);
 
             return secret.ToArray();
+        }
+
+        private AsymmetricCipherKeyPair GenerateKeyPairCore()
+        {
+            var parameters = new MLKemKeyGenerationParameters(_random, _parameters);
+            var generator = GeneratorUtilities.GetKeyPairGenerator("ML-KEM");
+
+            generator.Init(parameters);
+
+            return generator.GenerateKeyPair();
         }
     }
 }
