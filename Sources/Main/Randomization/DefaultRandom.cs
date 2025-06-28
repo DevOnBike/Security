@@ -29,6 +29,7 @@ namespace DevOnBike.Heimdall.Randomization
             RandomNumberGenerator.Fill(toFill);
         }
 
+        /// <inheritdoc />
         public void Fill(Span<byte> toFill)
         {
             RandomNumberGenerator.Fill(toFill);
