@@ -7,7 +7,7 @@ using Org.BouncyCastle.Security;
 
 namespace DevOnBike.Security.Tests.Pqc
 {
-    public class KemTests
+    public class PqcTests
     {
         [Fact]
         public void MlDsa_SignThenVerify_ShouldWork()
