@@ -14,7 +14,7 @@
         /// Gets the encoded byte representation of the public key.
         /// </summary>
         /// <returns>A byte array containing the public key.</returns>
-        byte[] GetEncoded();
+        byte[] Content { get; }
     }
 }
 

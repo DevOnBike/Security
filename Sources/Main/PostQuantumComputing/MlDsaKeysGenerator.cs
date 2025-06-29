@@ -1,4 +1,5 @@
-﻿using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
+﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
+using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
 using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
 using DevOnBike.Heimdall.Randomization;
 using Org.BouncyCastle.Crypto;
@@ -7,7 +8,7 @@ using Org.BouncyCastle.Security;
 
 namespace DevOnBike.Heimdall.PostQuantumComputing
 {
-    public sealed class MlDsaKeysGenerator : IKeysGenerator
+    public sealed class MlDsaKeysGenerator : IAsymmetricKeyPairGenerator
     {
         private readonly MLDsaParameters _parameters;
         private readonly SecureRandom _random;
@@ -23,15 +24,15 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
         }
 
         /// <inheritdoc />
-        public PqcKeyPair GenerateKeyPair()
+        public IAsymmetricKeyPair GenerateKeyPair()
         {
             var keyPair = GenerateKeyPairCore();
             var publicKey = (MLKemPublicKeyParameters)keyPair.Public;
             var privateKey = (MLKemPrivateKeyParameters)keyPair.Private;
 
-            return new PqcKeyPair(publicKey.GetEncoded(), privateKey.GetEncoded());
+            return AsymmetricKeyPair.Create(publicKey, privateKey);
         }
-        
+
         private AsymmetricCipherKeyPair GenerateKeyPairCore()
         {
             var parameters = new MLDsaKeyGenerationParameters(_random, _parameters);

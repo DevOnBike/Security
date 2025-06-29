@@ -1,4 +1,5 @@
-﻿using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
+﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
+using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
 using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
 using DevOnBike.Heimdall.Randomization;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -23,17 +24,17 @@ namespace DevOnBike.Heimdall.PostQuantumComputing
         
         public byte[] CreateSignature(byte[] data, byte[] key)
         {
-            var p = MLDsaPrivateKeyParameters.FromEncoding(_parameters, key);
-            var signer = SignerUtilities.InitSigner(_parameters.Name, forSigning: true, p, _random);
+            var privateKey = MLDsaPrivateKeyParameters.FromEncoding(_parameters, key);
+            var signer = SignerUtilities.InitSigner(_parameters.Name, true, privateKey, _random);
 
             signer.BlockUpdate(data);
 
             return signer.GenerateSignature();
         }
 
-        public byte[] CreateSignature(byte[] data, PqcKeyPair keyPair)
+        public byte[] CreateSignature(byte[] data, IAsymmetricKeyPair keyPair)
         {
-            return CreateSignature(data, keyPair.PrivateKey);
+            return CreateSignature(data, keyPair.Private.Content);
         }
 
         public bool VerifySignature(byte[] signature, byte[] key)

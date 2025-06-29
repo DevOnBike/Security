@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using DevOnBike.Heimdall.Cryptography.Abstractions;
 using DevOnBike.Heimdall.PostQuantumComputing;
 using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
 using DevOnBike.Heimdall.Randomization;
@@ -64,11 +65,11 @@ namespace DevOnBike.Security.Tests.Pqc
             var parameters = MLKemParameters.ml_kem_1024;
 
             // Act
-            var keyPair = kem.GenerateKeyPair();
+            var keyPair = CreateMlKemKeysGenerator().GenerateKeyPair();
 
             // Assert
-            Assert.NotNull(keyPair.PublicKey);
-            Assert.NotNull(keyPair.PrivateKey);
+            Assert.NotNull(keyPair.Public.Content);
+            Assert.NotNull(keyPair.Private.Content);
             // Assert.Equal(parameters.GetPublicKeySize(), keyPair.PublicKey.Length);
             // Assert.Equal(parameters.GetPrivateKeySize(), keyPair.PrivateKey.Length);
         }
@@ -79,10 +80,10 @@ namespace DevOnBike.Security.Tests.Pqc
             // Arrange
             var kem = Create();
             var parameters = MLKemParameters.ml_kem_1024;
-            var keyPair = kem.GenerateKeyPair();
+            var keyPair = CreateMlKemKeysGenerator().GenerateKeyPair();
 
             // Act
-            var result = kem.Encapsulate(keyPair.PublicKey);
+            var result = kem.Encapsulate(keyPair.Public.Content);
 
             // Assert
             Assert.NotNull(result.SharedSecret);
@@ -97,11 +98,11 @@ namespace DevOnBike.Security.Tests.Pqc
             // Arrange
             var kem = Create();
             var parameters = MLKemParameters.ml_kem_1024;
-            var keyPair = kem.GenerateKeyPair();
-            var encapsulationResult = kem.Encapsulate(keyPair.PublicKey);
+            var keyPair = CreateMlKemKeysGenerator().GenerateKeyPair();
+            var encapsulationResult = kem.Encapsulate(keyPair.Public.Content);
 
             // Act
-            var decapsulatedSecret = kem.Decapsulate(keyPair.PrivateKey, encapsulationResult.Ciphertext);
+            var decapsulatedSecret = kem.Decapsulate(keyPair.Private.Content, encapsulationResult.Ciphertext);
 
             // Assert
             Assert.NotNull(decapsulatedSecret);
@@ -115,15 +116,15 @@ namespace DevOnBike.Security.Tests.Pqc
             var kem = Create();
 
             // 1. Server generates keys
-            var serverKeyPair = kem.GenerateKeyPair();
+            var serverKeyPair = CreateMlKemKeysGenerator().GenerateKeyPair();
 
             // 2. Client uses public key to create a shared secret and ciphertext
-            var clientResult = kem.Encapsulate(serverKeyPair.PublicKey);
+            var clientResult = kem.Encapsulate(serverKeyPair.Public.Content);
             var clientSharedSecret = clientResult.SharedSecret;
             var ciphertextToServer = clientResult.Ciphertext;
 
             // 3. Server uses its private key and the ciphertext to derive the secret
-            var serverSharedSecret = kem.Decapsulate(serverKeyPair.PrivateKey, ciphertextToServer);
+            var serverSharedSecret = kem.Decapsulate(serverKeyPair.Private.Content, ciphertextToServer);
 
             // Assert
             // With a real implementation, these two secrets will be identical.
@@ -133,6 +134,11 @@ namespace DevOnBike.Security.Tests.Pqc
         private static IKeyEncapsulation Create()
         {
             return new CrystalsKyberEncapsulation();
+        }
+
+        private static IAsymmetricKeyPairGenerator CreateMlKemKeysGenerator()
+        {
+            return new MlKemKeysGenerator();
         }
     }
 }

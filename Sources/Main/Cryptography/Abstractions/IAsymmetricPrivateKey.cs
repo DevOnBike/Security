@@ -17,7 +17,7 @@
         /// Care should be taken in handling the exposed private key material.
         /// </remarks>
         /// <returns>A byte array containing the private key.</returns>
-        byte[] GetEncoded();
+        byte[] Content { get; }
     }
 }
 

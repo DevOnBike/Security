@@ -9,12 +9,6 @@ namespace DevOnBike.Heimdall.PostQuantumComputing.Abstractions
     public interface IKeyEncapsulation
     {
         /// <summary>
-        /// Generates a new public and private key pair.
-        /// </summary>
-        /// <returns>A key pair containing the public and private keys.</returns>
-        PqcKeyPair GenerateKeyPair();
-
-        /// <summary>
         /// Executed by the party that wishes to establish a shared secret.
         /// It uses the recipient's public key to generate a shared secret and
         /// an encapsulation of that secret (the ciphertext).
