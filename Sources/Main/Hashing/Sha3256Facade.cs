@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using DevOnBike.Heimdall.Hashing.Abstractions;
 
 namespace DevOnBike.Heimdall.Hashing
 {

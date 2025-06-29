@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <DebugType>embedded</DebugType>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <RootNamespace>DevOnBike.Heimdall</RootNamespace>
     <AssemblyName>DevOnBike.Heimdall</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -25,7 +26,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.1" />
-    <None Include="logo.png" Pack="true" PackagePath="\"/>
+    <None Include="logo.png" Pack="true" PackagePath="\" />
     <None Include="README.md" Pack="true" PackagePath="\" />
     <InternalsVisibleTo Include="Tests" />
   </ItemGroup>
