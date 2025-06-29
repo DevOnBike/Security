@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 
-namespace DevOnBike.Heimdall.Cryptography
+namespace DevOnBike.Heimdall.Cryptography.Abstractions
 {
     /// <summary>
     /// Defines the contract for an XChaCha20-Poly1305 authenticated encryption implementation.

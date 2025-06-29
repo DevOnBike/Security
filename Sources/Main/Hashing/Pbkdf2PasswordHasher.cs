@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using DevOnBike.Heimdall.Hashing.Abstractions;
 using DevOnBike.Heimdall.Randomization;
 using Microsoft.Extensions.Options;
 

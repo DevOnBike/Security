@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <DebugType>embedded</DebugType>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <RootNamespace>DevOnBike.Heimdall</RootNamespace>
     <AssemblyName>DevOnBike.Heimdall</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

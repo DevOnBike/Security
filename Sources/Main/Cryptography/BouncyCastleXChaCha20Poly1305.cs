@@ -4,6 +4,7 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 using System.Runtime.CompilerServices;
+using DevOnBike.Heimdall.Cryptography.Abstractions;
 using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants;
 
 namespace DevOnBike.Heimdall.Cryptography

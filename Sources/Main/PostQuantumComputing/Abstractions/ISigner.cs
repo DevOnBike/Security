@@ -1,6 +1,6 @@
 ﻿using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
 
-namespace DevOnBike.Heimdall.PostQuantumComputing
+namespace DevOnBike.Heimdall.PostQuantumComputing.Abstractions
 {
     public interface ISigner
     {

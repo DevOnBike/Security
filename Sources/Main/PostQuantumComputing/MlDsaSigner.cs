@@ -1,6 +1,6 @@
-﻿using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
+﻿using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
+using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
 using DevOnBike.Heimdall.Randomization;
-using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 

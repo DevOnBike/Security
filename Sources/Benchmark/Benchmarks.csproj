@@ -9,6 +9,8 @@
 		<AssemblyName>Benchmarks</AssemblyName>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<IsPackable>false</IsPackable>
+    <SonarQubeExclude>true</SonarQubeExclude>
+    <NoWarn>$(NoWarn);1591</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

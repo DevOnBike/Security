@@ -1,6 +1,6 @@
 ﻿using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
 
-namespace DevOnBike.Heimdall.PostQuantumComputing
+namespace DevOnBike.Heimdall.PostQuantumComputing.Abstractions
 {
     /// <summary>
     /// Defines the contract for a Post-Quantum Key Encapsulation Mechanism (KEM).

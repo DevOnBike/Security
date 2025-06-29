@@ -3,6 +3,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Order;
 using DevOnBike.Heimdall.Cryptography;
+using DevOnBike.Heimdall.Cryptography.Abstractions;
 using DevOnBike.Heimdall.Randomization;
 using Microsoft.AspNetCore.DataProtection;
 

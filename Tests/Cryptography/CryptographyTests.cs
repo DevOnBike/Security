@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Org.BouncyCastle.Crypto;
 using System.Security.Cryptography;
 using System.Text;
+using DevOnBike.Heimdall.Cryptography.Abstractions;
 
 namespace DevOnBike.Security.Tests.Cryptography
 {

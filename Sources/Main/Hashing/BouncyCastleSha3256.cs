@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using DevOnBike.Heimdall.Hashing.Abstractions;
 using Org.BouncyCastle.Crypto.Digests;
 
 namespace DevOnBike.Heimdall.Hashing

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using DevOnBike.Heimdall.Cryptography.Abstractions;
 using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants;
 
 namespace DevOnBike.Heimdall.Cryptography

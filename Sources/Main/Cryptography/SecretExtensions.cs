@@ -1,7 +1,4 @@
-﻿using DevOnBike.Heimdall;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Runtime.CompilerServices;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.AspNetCore.DataProtection

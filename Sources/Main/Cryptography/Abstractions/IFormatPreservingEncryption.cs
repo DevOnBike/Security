@@ -1,4 +1,4 @@
-﻿namespace DevOnBike.Heimdall.Cryptography
+﻿namespace DevOnBike.Heimdall.Cryptography.Abstractions
 {
     public interface IFormatPreservingEncryption
     {

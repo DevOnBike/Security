@@ -7,6 +7,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>DevOnBike.Security.Tests</RootNamespace>
     <AssemblyName>DevOnBike.Security.Tests</AssemblyName>
+    <SonarQubeExclude>true</SonarQubeExclude>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

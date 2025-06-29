@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 
-namespace DevOnBike.Heimdall.Cryptography
+namespace DevOnBike.Heimdall.Cryptography.Abstractions
 {
     public interface IChaCha20Poly1305
     {
