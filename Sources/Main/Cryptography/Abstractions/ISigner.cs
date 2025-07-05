@@ -1,6 +1,4 @@
-﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
-
-namespace DevOnBike.Heimdall.PostQuantumComputing.Abstractions
+﻿namespace DevOnBike.Heimdall.Cryptography.Abstractions
 {
     public interface ISigner
     {

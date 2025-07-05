@@ -12,7 +12,7 @@ namespace DevOnBike.Heimdall.PostQuantumComputing.Abstractions
         /// </summary>
         /// <param name="publicKey">The recipient's public key.</param>
         /// <returns>An object containing the shared secret and its encapsulation.</returns>
-        ISecretKeyWithEncapsulation Encapsulate(IAsymmetricPublicKey publicKey);
+        IEncapsulationResult Encapsulate(IAsymmetricPublicKey publicKey);
     }
 }
 

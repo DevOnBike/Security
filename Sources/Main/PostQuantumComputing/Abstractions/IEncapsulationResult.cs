@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents the result of a key encapsulation operation from the sender's side.
     /// </summary>
-    public interface ISecretKeyWithEncapsulation
+    public interface IEncapsulationResult
     {
         /// <summary>
         /// Gets the derived shared secret. This should be used to derive an encryption key.

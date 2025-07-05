@@ -83,11 +83,11 @@ namespace DevOnBike.Security.Tests.Pqc
             var keyPair = CreateMlKemKeysGenerator().GenerateKeyPair();
 
             // Act
-            var result = kem.Encapsulate(keyPair.Public.Content);
+            var result = kem.Encapsulate(keyPair.Public);
 
             // Assert
             Assert.NotNull(result.SharedSecret);
-            Assert.NotNull(result.Ciphertext);
+            Assert.NotNull(result.Encapsulation);
             // Assert.Equal(parameters.SessionKeySize / 8, result.SharedSecret.Length);
             // Assert.Equal(parameters.GetCiphertextSize(), result.Ciphertext.Length);
         }
@@ -99,10 +99,10 @@ namespace DevOnBike.Security.Tests.Pqc
             var kem = Create();
             var parameters = MLKemParameters.ml_kem_1024;
             var keyPair = CreateMlKemKeysGenerator().GenerateKeyPair();
-            var encapsulationResult = kem.Encapsulate(keyPair.Public.Content);
+            var encapsulationResult = kem.Encapsulate(keyPair.Public);
 
             // Act
-            var decapsulatedSecret = kem.Decapsulate(keyPair.Private.Content, encapsulationResult.Ciphertext);
+            var decapsulatedSecret = kem.Decapsulate(keyPair.Private, encapsulationResult.Encapsulation);
 
             // Assert
             Assert.NotNull(decapsulatedSecret);
@@ -119,19 +119,19 @@ namespace DevOnBike.Security.Tests.Pqc
             var serverKeyPair = CreateMlKemKeysGenerator().GenerateKeyPair();
 
             // 2. Client uses public key to create a shared secret and ciphertext
-            var clientResult = kem.Encapsulate(serverKeyPair.Public.Content);
+            var clientResult = kem.Encapsulate(serverKeyPair.Public);
             var clientSharedSecret = clientResult.SharedSecret;
-            var ciphertextToServer = clientResult.Ciphertext;
+            var ciphertextToServer = clientResult.Encapsulation;
 
             // 3. Server uses its private key and the ciphertext to derive the secret
-            var serverSharedSecret = kem.Decapsulate(serverKeyPair.Private.Content, ciphertextToServer);
+            var serverSharedSecret = kem.Decapsulate(serverKeyPair.Private, ciphertextToServer);
 
             // Assert
             // With a real implementation, these two secrets will be identical.
             Assert.Equal(clientSharedSecret, serverSharedSecret);
         }
 
-        private static IKeyEncapsulation Create()
+        private static IEncapsulation Create()
         {
             return new CrystalsKyberEncapsulation();
         }
