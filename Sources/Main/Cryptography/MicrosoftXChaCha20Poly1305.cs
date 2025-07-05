@@ -1,9 +1,8 @@
 ﻿using DevOnBike.Heimdall.Randomization;
 using Microsoft.AspNetCore.DataProtection;
-using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants;
+using DevOnBike.Heimdall.Cryptography.Abstractions;
 
 namespace DevOnBike.Heimdall.Cryptography
 {
