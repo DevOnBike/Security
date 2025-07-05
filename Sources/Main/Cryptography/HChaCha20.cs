@@ -1,4 +1,7 @@
-﻿using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants;
+﻿using System.Buffers.Binary;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants;
 
 namespace DevOnBike.Heimdall.Cryptography
 {
@@ -19,7 +22,7 @@ namespace DevOnBike.Heimdall.Cryptography
 
         public static void DeriveSubKey(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce, Span<byte> subKey)
         {
-            var state = new uint[16];
+            Span<uint> state = stackalloc uint[16];
 
             state[0] = 0x61707865; // "expa"
             state[1] = 0x3320646e; // "nd 3"
@@ -36,7 +39,8 @@ namespace DevOnBike.Heimdall.Cryptography
                 state[12 + i] = ReadU32LE(nonce, i * 4);
             }
 
-            var workingState = (uint[])state.Clone();
+            Span<uint> workingState = stackalloc uint[16];
+            state.CopyTo(workingState);
 
             for (var i = 0; i < 10; i++)
             {
@@ -67,31 +71,22 @@ namespace DevOnBike.Heimdall.Cryptography
 
         private static void QuarterRound(ref uint a, ref uint b, ref uint c, ref uint d)
         {
-            a += b;
-            d ^= a;
-            d = (d << 16) | (d >> 16);
-            c += d;
-            b ^= c;
-            b = (b << 12) | (b >> 20);
-            a += b;
-            d ^= a;
-            d = (d << 8) | (d >> 24);
-            c += d;
-            b ^= c;
-            b = (b << 7) | (b >> 25);
+            a += b; d ^= a; d = BitOperations.RotateLeft(d, 16);
+            c += d; b ^= c; b = BitOperations.RotateLeft(b, 12);
+            a += b; d ^= a; d = BitOperations.RotateLeft(d, 8);
+            c += d; b ^= c; b = BitOperations.RotateLeft(b, 7);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint ReadU32LE(ReadOnlySpan<byte> buffer, int offset)
         {
-            return (uint)(buffer[offset] | (buffer[offset + 1] << 8) | (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24));
+            return BinaryPrimitives.ReadUInt32LittleEndian(buffer.Slice(offset, 4));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void WriteU32LE(Span<byte> buffer, int offset, uint value)
         {
-            buffer[offset] = (byte)value;
-            buffer[offset + 1] = (byte)(value >> 8);
-            buffer[offset + 2] = (byte)(value >> 16);
-            buffer[offset + 3] = (byte)(value >> 24);
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer.Slice(offset, 4), value);
         }
     }
 }

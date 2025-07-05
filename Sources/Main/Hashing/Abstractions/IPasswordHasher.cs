@@ -1,4 +1,4 @@
-﻿namespace DevOnBike.Heimdall.Hashing
+﻿namespace DevOnBike.Heimdall.Hashing.Abstractions
 {
     /// <summary>
     /// Password hasher

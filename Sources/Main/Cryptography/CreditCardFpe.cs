@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace DevOnBike.Heimdall.Cryptography
 {

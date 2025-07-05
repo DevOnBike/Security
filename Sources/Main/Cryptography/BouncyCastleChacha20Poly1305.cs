@@ -1,4 +1,5 @@
-﻿using DevOnBike.Heimdall.Randomization;
+﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
+using DevOnBike.Heimdall.Randomization;
 using Microsoft.AspNetCore.DataProtection;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;

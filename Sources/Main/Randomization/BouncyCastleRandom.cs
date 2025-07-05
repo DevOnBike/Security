@@ -1,13 +1,10 @@
-﻿using AesUtilities = Org.BouncyCastle.Crypto.AesUtilities;
-using SP800SecureRandom = Org.BouncyCastle.Crypto.Prng.SP800SecureRandom;
-using SP800SecureRandomBuilder = Org.BouncyCastle.Crypto.Prng.SP800SecureRandomBuilder;
+﻿using Org.BouncyCastle.Security;
 
 namespace DevOnBike.Heimdall.Randomization
 {
     public class BouncyCastleRandom : IRandom
     {
-        private static readonly SP800SecureRandom _generator = new SP800SecureRandomBuilder()
-            .BuildCtr(AesUtilities.CreateEngine(), 256, Guid.NewGuid().ToByteArray(), false);
+        private readonly SecureRandom _generator = RecommendedSecureRandom.Instance;
                 
         public int Next()
         {
@@ -26,7 +23,7 @@ namespace DevOnBike.Heimdall.Randomization
 
         public byte[] GenerateSeed(int numBytes)
         {
-            if (numBytes < 2)
+            if (numBytes < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(numBytes), "Seed length should be > 0");
             }

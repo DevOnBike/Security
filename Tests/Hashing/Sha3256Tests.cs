@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using DevOnBike.Heimdall.Hashing;
+using DevOnBike.Heimdall.Hashing.Abstractions;
 
 namespace DevOnBike.Security.Tests.Hashing
 {
