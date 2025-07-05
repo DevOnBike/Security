@@ -1,6 +1,8 @@
 ﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Pkcs;
+using System;
+using System.Security.Cryptography;
 
 namespace DevOnBike.Heimdall.Cryptography.Contracts
 {
@@ -47,6 +49,18 @@ namespace DevOnBike.Heimdall.Cryptography.Contracts
             var keyInfo = PrivateKeyInfoFactory.CreatePrivateKeyInfo(privateKey);
 
             return Create(privateKey.AlgorithmName, keyInfo.GetDerEncoded());
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                CryptographicOperations.ZeroMemory(Content);
+            }
+            catch
+            {
+                // CA1065: Do not raise exceptions in unexpected locations
+            }
         }
     }
 }

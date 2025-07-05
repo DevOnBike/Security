@@ -106,16 +106,16 @@ namespace DevOnBike.Security.Tests.Pqc
         // NIST SP 800-56C recommends combining secrets from different schemes using a KDF.
         // A cryptographic hash function like SHA-384 is a simple and effective KDF.
         private (byte[] WrappingKey, byte[] Encapsulation) CreateKeyWrappingKey_ForEncryption(
-            IAsymmetricKeyPair ecKeyPair,
+            IAsymmetricKeyPair classicKeyPair,
             IAsymmetricPublicKey kyberPublicKey)
         {
             // Classical Secret: Perform ECDH with your own key pair.
-            var pk = PrivateKeyFactory.CreateKey(ecKeyPair.Private.Content);
+            var pk = PrivateKeyFactory.CreateKey(classicKeyPair.Private.Content);
             var ecAgreement = new ECDHBasicAgreement();
 
             ecAgreement.Init(pk);
 
-            var pub = PublicKeyFactory.CreateKey(ecKeyPair.Public.Content);
+            var pub = PublicKeyFactory.CreateKey(classicKeyPair.Public.Content);
             var agreementValue = ecAgreement.CalculateAgreement(pub);
             var ecSecret = BigIntegers.AsUnsignedByteArray(ecAgreement.GetFieldSize(), agreementValue);
 
@@ -197,20 +197,6 @@ namespace DevOnBike.Security.Tests.Pqc
             aesGcm.Decrypt(nonce, ciphertext, tag, decryptedBytes);
 
             return decryptedBytes;
-
-            var cipher = new GcmBlockCipher(new AesEngine());
-            var parameters = new AeadParameters(new KeyParameter(key), 128, nonce);
-            cipher.Init(false, parameters); // false for decryption
-
-            var plaintext = new byte[cipher.GetOutputSize(ciphertext.Length)];
-            var len = cipher.ProcessBytes(ciphertext, 0, ciphertext.Length, plaintext, 0);
-            cipher.DoFinal(plaintext, len);
-
-            // GcmBlockCipher includes the MAC check, so if DoFinal succeeds, data is authentic.
-            // The output buffer `plaintext` may be larger than the actual plaintext,
-            // so we need to return only the relevant part.
-            Array.Resize(ref plaintext, len);
-            return plaintext;
         }
 
         private static IEncapsulation CreateEncapsulation()
