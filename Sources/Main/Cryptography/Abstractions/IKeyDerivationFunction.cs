@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DevOnBike.Heimdall.Cryptography.Abstractions
+﻿namespace DevOnBike.Heimdall.Cryptography.Abstractions
 {
     /// <summary>
     /// Defines a generic interface for a Key Derivation Function (KDF).
