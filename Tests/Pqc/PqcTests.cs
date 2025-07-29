@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using DevOnBike.Heimdall.Cryptography.Abstractions;
-using DevOnBike.Heimdall.PostQuantumComputing;
-using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
+using DevOnBike.Heimdall.PostQuantumCryptography;
+using DevOnBike.Heimdall.PostQuantumCryptography.Abstractions;
 using DevOnBike.Heimdall.Randomization;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Crypto.Parameters;

@@ -5,7 +5,7 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 
-namespace DevOnBike.Heimdall.PostQuantumComputing
+namespace DevOnBike.Heimdall.PostQuantumCryptography
 {
     public sealed class MlKemKeysGenerator : IAsymmetricKeyPairGenerator
     {

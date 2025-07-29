@@ -1,4 +1,4 @@
-﻿namespace DevOnBike.Heimdall.PostQuantumComputing.Abstractions
+﻿namespace DevOnBike.Heimdall.PostQuantumCryptography.Abstractions
 {
     /// <summary>
     /// Holds the result of a hybrid encryption operation.

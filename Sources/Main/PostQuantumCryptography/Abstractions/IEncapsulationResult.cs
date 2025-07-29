@@ -1,4 +1,4 @@
-﻿namespace DevOnBike.Heimdall.PostQuantumComputing.Abstractions
+﻿namespace DevOnBike.Heimdall.PostQuantumCryptography.Abstractions
 {
     /// <summary>
     /// Represents the result of a key encapsulation operation from the sender's side.

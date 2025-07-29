@@ -3,7 +3,7 @@ using DevOnBike.Heimdall.Randomization;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 
-namespace DevOnBike.Heimdall.PostQuantumComputing
+namespace DevOnBike.Heimdall.PostQuantumCryptography
 {
     public class MlDsaSigner : ISigner
     {

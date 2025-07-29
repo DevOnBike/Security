@@ -1,6 +1,6 @@
 ﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
 
-namespace DevOnBike.Heimdall.PostQuantumComputing.Abstractions
+namespace DevOnBike.Heimdall.PostQuantumCryptography.Abstractions
 {
     /// <summary>
     /// Defines the contract for a hybrid encryption service.

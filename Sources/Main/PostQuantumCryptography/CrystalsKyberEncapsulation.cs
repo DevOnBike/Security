@@ -1,11 +1,11 @@
 ﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
-using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
-using DevOnBike.Heimdall.PostQuantumComputing.Contracts;
+using DevOnBike.Heimdall.PostQuantumCryptography.Abstractions;
+using DevOnBike.Heimdall.PostQuantumCryptography.Contracts;
 using DevOnBike.Heimdall.Randomization;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 
-namespace DevOnBike.Heimdall.PostQuantumComputing
+namespace DevOnBike.Heimdall.PostQuantumCryptography
 {
     /// <summary>
     /// An implementation of the ML-KEM (aka CRYSTALS-Kyber) Key Encapsulation Mechanism using Bouncy Castle.

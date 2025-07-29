@@ -1,6 +1,6 @@
-﻿using DevOnBike.Heimdall.PostQuantumComputing.Abstractions;
+﻿using DevOnBike.Heimdall.PostQuantumCryptography.Abstractions;
 
-namespace DevOnBike.Heimdall.PostQuantumComputing.Contracts
+namespace DevOnBike.Heimdall.PostQuantumCryptography.Contracts
 {
     /// <summary>
     /// Represents the result of a KEM encapsulation operation.
