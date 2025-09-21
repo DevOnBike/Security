@@ -6,6 +6,6 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
     {
         PqcEncryptedData Encrypt(byte[] toEncrypt);
 
-        byte[] Decrypt(PqcEncryptedData encryptedData);
+        byte[] Decrypt(PqcEncryptedData encrypted);
     }
 }

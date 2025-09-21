@@ -34,20 +34,20 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
         public PqcEncryptedData Encrypt(byte[] toEncrypt)
         {
             // 1. Generate a new, random Data Encryption Key (DEK) for this session.
-            var dataEncryptionKey = GenerateDataEncryptionKey(); // 256-bit AES key
+            var dek = GenerateDataEncryptionKey(); // 256-bit AES key
 
             // 2. Create a hybrid Key Encryption Key (KEK) to wrap the DEK.
             var (kek, encapsulation) = CreateKeyWrappingKeyForEncryption();
 
             // 3. Wrap the DEK with the KEK.
-            var (wrappedDek, kekNonce, tag1) = Encrypt(kek, dataEncryptionKey);
+            var (wrappedDek, kekNonce, tag1) = Encrypt(kek, dek);
 
             // 4. Encrypt the actual data using the original DEK.
-            var (encrypted, dataNonce, tag2) = Encrypt(dataEncryptionKey, toEncrypt);
+            var (encrypted, dataNonce, tag2) = Encrypt(dek, toEncrypt);
 
             return new PqcEncryptedData()
             {
-                EncryptedData = encrypted,
+                Encrypted = encrypted,
                 DataNonce = dataNonce,
                 DataTag = tag2,
                 Encapsulation = encapsulation,
@@ -57,16 +57,16 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
             };
         }
 
-        public byte[] Decrypt(PqcEncryptedData encryptedData)
+        public byte[] Decrypt(PqcEncryptedData encrypted)
         {
             // 1. Regenerate the KEK using your private master keys and the stored encapsulation data.
-            var regeneratedKek = CreateKeyWrappingKeyForDecryption(encryptedData.Encapsulation);
+            var kek = CreateKeyWrappingKeyForDecryption(encrypted.Encapsulation);
             
             // 2. Decrypt the wrapped DEK to recover the original Data Encryption Key.
-            var recoveredDek = Decrypt(regeneratedKek, encryptedData.WrappedDek, encryptedData.KekNonce, encryptedData.KekTag);
+            var dek = Decrypt(kek, encrypted.WrappedDek, encrypted.KekNonce, encrypted.KekTag);
             
             // 3. Decrypt the main ciphertext using the recovered DEK.
-            return Decrypt(recoveredDek, encryptedData.EncryptedData, encryptedData.DataNonce, encryptedData.DataTag);
+            return Decrypt(dek, encrypted.Encrypted, encrypted.DataNonce, encrypted.DataTag);
         }
 
         // NIST SP 800-56C recommends combining secrets from different schemes using a KDF.
@@ -75,23 +75,23 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
         {
             // Classical Secret: Perform ECDH with your own key pair.
             var pk = PrivateKeyFactory.CreateKey(_classicKeyPair.Private.Content);
-            var ecAgreement = new ECDHBasicAgreement();
+            var ecdhAgreement = new ECDHBasicAgreement();
 
-            ecAgreement.Init(pk);
+            ecdhAgreement.Init(pk);
 
             var pub = PublicKeyFactory.CreateKey(_classicKeyPair.Public.Content);
-            var agreementValue = ecAgreement.CalculateAgreement(pub);
-            var ecSecret = BigIntegers.AsUnsignedByteArray(ecAgreement.GetFieldSize(), agreementValue);
+            var agreementValue = ecdhAgreement.CalculateAgreement(pub);
+            var classicSecret = BigIntegers.AsUnsignedByteArray(ecdhAgreement.GetFieldSize(), agreementValue);
 
             // PQC Secret: Encapsulate a secret against your own public Kyber key.
             var encapsulationResult = _encapsulation.Encapsulate(_pqcKeyPair.Public);
             var pqcSecret = encapsulationResult.SharedSecret;
 
             // Combine both secrets to derive the final wrapping key.
-            var combinedKey = new byte[ecSecret.Length + pqcSecret.Length];
+            var combinedKey = new byte[classicSecret.Length + pqcSecret.Length];
 
-            Buffer.BlockCopy(ecSecret, 0, combinedKey, 0, ecSecret.Length);
-            Buffer.BlockCopy(pqcSecret, 0, combinedKey, ecSecret.Length, pqcSecret.Length);
+            Buffer.BlockCopy(classicSecret, 0, combinedKey, 0, classicSecret.Length);
+            Buffer.BlockCopy(pqcSecret, 0, combinedKey, classicSecret.Length, pqcSecret.Length);
 
             var derivedKey = DeriveKey(combinedKey);
 
@@ -101,23 +101,23 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
         private byte[] CreateKeyWrappingKeyForDecryption(byte[] encapsulation)
         {
             // Recreate the classical secret.
-            var ecAgreement = new ECDHBasicAgreement();
+            var ecdhAgreement = new ECDHBasicAgreement();
             var pk = PrivateKeyFactory.CreateKey(_classicKeyPair.Private.Content);
             
-            ecAgreement.Init(pk);
+            ecdhAgreement.Init(pk);
 
             var pub = PublicKeyFactory.CreateKey(_classicKeyPair.Public.Content);
-            var agreementValue = ecAgreement.CalculateAgreement(pub);
-            var ecSecret = BigIntegers.AsUnsignedByteArray(ecAgreement.GetFieldSize(), agreementValue);
+            var agreementValue = ecdhAgreement.CalculateAgreement(pub);
+            var classicSecret = BigIntegers.AsUnsignedByteArray(ecdhAgreement.GetFieldSize(), agreementValue);
 
             // Recreate the PQC secret by decapsulating the stored blob.
-            var kyberSecret = _encapsulation.Decapsulate(_pqcKeyPair.Private, encapsulation);
+            var pqcSecret = _encapsulation.Decapsulate(_pqcKeyPair.Private, encapsulation);
 
             // Combine secrets in the exact same way to get the same final key.
-            var combinedKey = new byte[ecSecret.Length + kyberSecret.Length];
+            var combinedKey = new byte[classicSecret.Length + pqcSecret.Length];
 
-            Buffer.BlockCopy(ecSecret, 0, combinedKey, 0, ecSecret.Length);
-            Buffer.BlockCopy(kyberSecret, 0, combinedKey, ecSecret.Length, kyberSecret.Length);
+            Buffer.BlockCopy(classicSecret, 0, combinedKey, 0, classicSecret.Length);
+            Buffer.BlockCopy(pqcSecret, 0, combinedKey, classicSecret.Length, pqcSecret.Length);
 
             return DeriveKey(combinedKey);
         }
@@ -128,7 +128,7 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
             var nonce = GenerateRandomBytes(12);
             var encrypted = new byte[toEncrypt.Length];
 
-            using var aesGcm = new AesGcm(key, AesGcm.TagByteSizes.MaxSize);
+            using var aesGcm = CreateAesGcm(key);
 
             var tag = new byte[AesGcm.TagByteSizes.MaxSize];
 
@@ -141,11 +141,16 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
         {
             var decryptedBytes = new byte[encrypted.Length];
 
-            using var aesGcm = new AesGcm(key, AesGcm.TagByteSizes.MaxSize); // Specify tag size explicitly
+            using var aesGcm = CreateAesGcm(key);
 
             aesGcm.Decrypt(nonce, encrypted, tag, decryptedBytes);
 
             return decryptedBytes;
+        }
+        
+        private static AesGcm CreateAesGcm(byte[] key)
+        {
+            return new AesGcm(key, AesGcm.TagByteSizes.MaxSize);
         }
         
         private byte[] DeriveKey(byte[] data)
