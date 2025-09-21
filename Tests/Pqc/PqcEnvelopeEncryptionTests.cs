@@ -7,23 +7,50 @@ using System.Security.Cryptography;
 using System.Text;
 using DevOnBike.Heimdall.PostQuantumCryptography;
 using DevOnBike.Heimdall.PostQuantumCryptography.Abstractions;
+using DevOnBike.Heimdall.Randomization;
 
 namespace DevOnBike.Security.Tests.Pqc
 {
     public class PqcEnvelopeEncryptionTests
     {
         [Fact]
+        public void ShouldEncryptAndDecryptOwnData_UsingPqcEnvelopeEncryptionRefactored()
+        {
+            // ARRANGE: One-time setup and data definition
+            var originalPlaintext = "My data must be safe from quantum computers, haha";
+            var toEncrypt = Encoding.UTF8.GetBytes(originalPlaintext);
+            
+            var classicKeyPair = GenerateEcKeyPair();
+            var pqcKeyPair = GenerateKyberKeyPair();
+            var kdf = CreateKdf();
+            var encapsulation = new CrystalsKyberEncapsulation();
+            var random = new DefaultRandom();
+            var service = new PqcEnvelopedCryptoService(classicKeyPair, pqcKeyPair, kdf, encapsulation, random);
+            
+            // ACT: ENCRYPTION FLOW 🔒
+            var encrypted = service.Encrypt(toEncrypt);
+            Assert.NotNull(encrypted);
+            
+            // ACT: DECRYPTION FLOW 🔓
+            var decrypted = service.Decrypt(encrypted);
+            
+            // ASSERT
+            Assert.Equal(toEncrypt, decrypted);
+        }
+
+        [Fact]
         public void ShouldEncryptAndDecryptOwnData_UsingPqcEnvelopeEncryption()
         {
             // ARRANGE: One-time setup and data definition
 
-            // 1. Generate long-term master key pairs. In a real app, these would be
-            //    generated once and stored securely.
+            // 1. Generate long-term master key pairs.
+            //    In a real app, these would be generated once and stored securely.
             var ecMasterKeyPair = GenerateEcKeyPair();
             var kyberMasterKeyPair = GenerateKyberKeyPair();
 
             // 2. Define the data to be encrypted.
             var originalPlaintext = "My data must be safe from quantum computers, haha";
+            var toEncrypt = Encoding.UTF8.GetBytes(originalPlaintext);
 
             // ACT: ENCRYPTION FLOW 🔒
 
@@ -31,15 +58,14 @@ namespace DevOnBike.Security.Tests.Pqc
             var dataEncryptionKey = GenerateRandomBytes(32); // 256-bit AES key
 
             // 2. Create a hybrid Key Encryption Key (KEK) to wrap the DEK.
-            (var keyEncryptionKey, var encapsulation) = CreateKeyWrappingKey_ForEncryption(
-                ecMasterKeyPair,
-                kyberMasterKeyPair.Public);
+            var (keyEncryptionKey, encapsulation) =
+                CreateKeyWrappingKey_ForEncryption(ecMasterKeyPair, kyberMasterKeyPair.Public);
 
             // 3. Wrap the DEK with the KEK.
-            (var wrappedDek, var kekNonce, var tag1) = EncryptPayload(keyEncryptionKey, dataEncryptionKey);
+            var (wrappedDek, kekNonce, tag1) = EncryptPayload(keyEncryptionKey, dataEncryptionKey);
 
             // 4. Encrypt the actual data using the original DEK.
-            (var ciphertext, var dataNonce,var tag2) = EncryptPayload(dataEncryptionKey, Encoding.UTF8.GetBytes(originalPlaintext));
+            var (ciphertext, dataNonce, tag2) = EncryptPayload(dataEncryptionKey, toEncrypt);
 
             // At this point, you would store:
             // - ciphertext
@@ -48,7 +74,6 @@ namespace DevOnBike.Security.Tests.Pqc
             // - kekNonce
             // - dataNonce
             // You discard the original dataEncryptionKey and keyEncryptionKey.
-
 
             // ACT: DECRYPTION FLOW 🔓
 
@@ -68,6 +93,7 @@ namespace DevOnBike.Security.Tests.Pqc
             // ASSERT
             // First, prove the key was recovered correctly.
             Assert.Equal(dataEncryptionKey, recoveredDek);
+
             // Finally, prove the data was recovered correctly.
             Assert.Equal(originalPlaintext, decryptedPlaintext);
         }
@@ -126,8 +152,8 @@ namespace DevOnBike.Security.Tests.Pqc
             var derivedKey = kdf.DeriveKey(
                 combinedKey,
                 32, // 32 bytes for AES-256
-                Encoding.UTF8.GetBytes("HybridKey"), // Label
-                Encoding.UTF8.GetBytes("HybridContext")); // Context
+                "HybridKey"u8, // Label
+                "HybridContext"u8); // Context
 
             return (derivedKey, encapsulationResult.Encapsulation);
         }
@@ -160,8 +186,8 @@ namespace DevOnBike.Security.Tests.Pqc
             return kdf.DeriveKey(
                 combinedKey,
                 32, // 32 bytes for AES-256
-                Encoding.UTF8.GetBytes("HybridKey"), // Label
-                Encoding.UTF8.GetBytes("HybridContext")); // Context
+                "HybridKey"u8, // Label
+                "HybridContext"u8); // Context
         }
 
         // NIST SP 800-38D specifies AES-GCM for authenticated encryption.
