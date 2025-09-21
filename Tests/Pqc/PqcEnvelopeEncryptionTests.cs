@@ -19,21 +19,22 @@ namespace DevOnBike.Security.Tests.Pqc
             // ARRANGE: One-time setup and data definition
             var originalPlaintext = "My data must be safe from quantum computers, haha";
             var toEncrypt = Encoding.UTF8.GetBytes(originalPlaintext);
-            
+            var aad = Encoding.UTF8.GetBytes("some_id");
+
             var classicKeyPair = GenerateEcKeyPair();
             var pqcKeyPair = GenerateKyberKeyPair();
             var kdf = CreateKdf();
             var encapsulation = new CrystalsKyberEncapsulation();
             var random = new DefaultRandom();
             var service = new PqcEnvelopedCryptoService(classicKeyPair, pqcKeyPair, kdf, encapsulation, random);
-            
+
             // ACT: ENCRYPTION FLOW 🔒
-            var encrypted = service.Encrypt(toEncrypt);
+            var encrypted = service.Encrypt(toEncrypt, aad);
             Assert.NotNull(encrypted);
-            
+
             // ACT: DECRYPTION FLOW 🔓
             var decrypted = service.Decrypt(encrypted);
-            
+
             // ASSERT
             Assert.Equal(toEncrypt, decrypted);
         }

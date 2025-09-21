@@ -1,6 +1,6 @@
 ﻿namespace DevOnBike.Heimdall.PostQuantumCryptography.Contracts
 {
-    public sealed class PqcEncryptedData
+    public sealed class PqcEnvelopedEncryptedData
     {
         /// <summary>
         /// The encapsulation blob from the Post-Quantum Cryptography (PQC) algorithm (e.g., Kyber).
@@ -38,6 +38,11 @@
         /// The actual encrypted payload (the ciphertext).
         /// </summary>
         public byte[] Encrypted { get; init; }
+        
+        /// <summary>
+        /// Authenticated Associated Data.
+        /// </summary>
+        public byte[] Aad { get; init; }
     }
 
 }

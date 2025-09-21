@@ -4,8 +4,8 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
 {
     public interface IPqcEnvelopedCryptoService
     {
-        PqcEncryptedData Encrypt(byte[] toEncrypt);
+        PqcEnvelopedEncryptedData Encrypt(byte[] toEncrypt, byte[] aad);
 
-        byte[] Decrypt(PqcEncryptedData encrypted);
+        byte[] Decrypt(PqcEnvelopedEncryptedData encrypted);
     }
 }

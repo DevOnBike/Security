@@ -31,7 +31,7 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
             _random = random;
         }
 
-        public PqcEncryptedData Encrypt(byte[] toEncrypt)
+        public PqcEnvelopedEncryptedData Encrypt(byte[] toEncrypt, byte[] aad)
         {
             // 1. Generate a new, random Data Encryption Key (DEK) for this session.
             var dek = GenerateDataEncryptionKey(); // 256-bit AES key
@@ -40,12 +40,12 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
             var (kek, encapsulation) = CreateKeyWrappingKeyForEncryption();
 
             // 3. Wrap the DEK with the KEK.
-            var (wrappedDek, kekNonce, tag1) = Encrypt(kek, dek);
+            var (wrappedDek, kekNonce, tag1) = Encrypt(kek, dek, aad);
 
             // 4. Encrypt the actual data using the original DEK.
-            var (encrypted, dataNonce, tag2) = Encrypt(dek, toEncrypt);
+            var (encrypted, dataNonce, tag2) = Encrypt(dek, toEncrypt, aad);
 
-            return new PqcEncryptedData()
+            return new PqcEnvelopedEncryptedData()
             {
                 Encrypted = encrypted,
                 DataNonce = dataNonce,
@@ -53,25 +53,26 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
                 Encapsulation = encapsulation,
                 KekNonce = kekNonce,
                 KekTag = tag1,
-                WrappedDek = wrappedDek
+                WrappedDek = wrappedDek,
+                Aad = aad
             };
         }
 
-        public byte[] Decrypt(PqcEncryptedData encrypted)
+        public byte[] Decrypt(PqcEnvelopedEncryptedData encrypted)
         {
             // 1. Regenerate the KEK using your private master keys and the stored encapsulation data.
             var kek = CreateKeyWrappingKeyForDecryption(encrypted.Encapsulation);
-            
+
             // 2. Decrypt the wrapped DEK to recover the original Data Encryption Key.
-            var dek = Decrypt(kek, encrypted.WrappedDek, encrypted.KekNonce, encrypted.KekTag);
-            
+            var dek = Decrypt(kek, encrypted.WrappedDek, encrypted.KekNonce, encrypted.KekTag, encrypted.Aad);
+
             // 3. Decrypt the main ciphertext using the recovered DEK.
-            return Decrypt(dek, encrypted.Encrypted, encrypted.DataNonce, encrypted.DataTag);
+            return Decrypt(dek, encrypted.Encrypted, encrypted.DataNonce, encrypted.DataTag, encrypted.Aad);
         }
 
         // NIST SP 800-56C recommends combining secrets from different schemes using a KDF.
         // A cryptographic hash function like SHA-384 is a simple and effective KDF.
-        private (byte[] wrappingKey, byte[] encapsulation) CreateKeyWrappingKeyForEncryption()
+        protected virtual (byte[] wrappingKey, byte[] encapsulation) CreateKeyWrappingKeyForEncryption()
         {
             // Classical Secret: Perform ECDH with your own key pair.
             var pk = PrivateKeyFactory.CreateKey(_classicKeyPair.Private.Content);
@@ -97,13 +98,13 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
 
             return (derivedKey, encapsulationResult.Encapsulation);
         }
-        
-        private byte[] CreateKeyWrappingKeyForDecryption(byte[] encapsulation)
+
+        protected virtual byte[] CreateKeyWrappingKeyForDecryption(byte[] encapsulation)
         {
             // Recreate the classical secret.
             var ecdhAgreement = new ECDHBasicAgreement();
             var pk = PrivateKeyFactory.CreateKey(_classicKeyPair.Private.Content);
-            
+
             ecdhAgreement.Init(pk);
 
             var pub = PublicKeyFactory.CreateKey(_classicKeyPair.Public.Content);
@@ -123,7 +124,7 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
         }
 
         // NIST SP 800-38D specifies AES-GCM for authenticated encryption.
-        private (byte[] encrypted, byte[] nonce, byte[] tag) Encrypt(byte[] key, byte[] toEncrypt)
+        private (byte[] encrypted, byte[] nonce, byte[] tag) Encrypt(byte[] key, byte[] toEncrypt, byte[] aad)
         {
             var nonce = GenerateRandomBytes(12);
             var encrypted = new byte[toEncrypt.Length];
@@ -132,38 +133,38 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
 
             var tag = new byte[AesGcm.TagByteSizes.MaxSize];
 
-            aesGcm.Encrypt(nonce, toEncrypt, encrypted, tag);
+            aesGcm.Encrypt(nonce, toEncrypt, encrypted, tag, aad);
 
             return (encrypted, nonce, tag);
         }
-        
-        private static byte[] Decrypt(byte[] key, byte[] encrypted, byte[] nonce, byte[] tag)
+
+        private static byte[] Decrypt(byte[] key, byte[] encrypted, byte[] nonce, byte[] tag, byte[] aad)
         {
             var decryptedBytes = new byte[encrypted.Length];
 
             using var aesGcm = CreateAesGcm(key);
 
-            aesGcm.Decrypt(nonce, encrypted, tag, decryptedBytes);
+            aesGcm.Decrypt(nonce, encrypted, tag, decryptedBytes, aad);
 
             return decryptedBytes;
         }
-        
+
         private static AesGcm CreateAesGcm(byte[] key)
         {
             return new AesGcm(key, AesGcm.TagByteSizes.MaxSize);
         }
-        
-        private byte[] DeriveKey(byte[] data)
+
+        protected virtual byte[] DeriveKey(byte[] data)
         {
             return _kdf.DeriveKey(data, 32, "HybridKey"u8, "HybridContext"u8);
         }
 
-        private byte[] GenerateDataEncryptionKey()
+        protected virtual byte[] GenerateDataEncryptionKey()
         {
             return GenerateRandomBytes(32); // 256-bit AES key
         }
 
-        private byte[] GenerateRandomBytes(int size)
+        protected virtual byte[] GenerateRandomBytes(int size)
         {
             var bytes = new byte[size];
 
