@@ -14,7 +14,7 @@ namespace DevOnBike.Security.Tests.Pqc
     public class PqcEnvelopeEncryptionTests
     {
         [Fact]
-        public void ShouldEncryptAndDecryptOwnData_UsingPqcEnvelopeEncryptionRefactored()
+        public void ShouldEncryptAndDecryptOwnData_UsingPqcEnvelopeEncryptionFinal()
         {
             // ARRANGE: One-time setup and data definition
             var originalPlaintext = "My data must be safe from quantum computers, haha";

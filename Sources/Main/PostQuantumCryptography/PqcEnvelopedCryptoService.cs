@@ -85,19 +85,15 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
 
             // PQC Secret: Encapsulate a secret against your own public Kyber key.
             var encapsulationResult = _encapsulation.Encapsulate(_pqcKeyPair.Public);
-            var kyberSecret = encapsulationResult.SharedSecret;
+            var pqcSecret = encapsulationResult.SharedSecret;
 
             // Combine both secrets to derive the final wrapping key.
-            var combinedKey = new byte[ecSecret.Length + kyberSecret.Length];
+            var combinedKey = new byte[ecSecret.Length + pqcSecret.Length];
 
             Buffer.BlockCopy(ecSecret, 0, combinedKey, 0, ecSecret.Length);
-            Buffer.BlockCopy(kyberSecret, 0, combinedKey, ecSecret.Length, kyberSecret.Length);
+            Buffer.BlockCopy(pqcSecret, 0, combinedKey, ecSecret.Length, pqcSecret.Length);
 
-            var derivedKey = _kdf.DeriveKey(
-                combinedKey,
-                32, // 32 bytes for AES-256
-                "HybridKey"u8, // Label
-                "HybridContext"u8); // Context
+            var derivedKey = DeriveKey(combinedKey);
 
             return (derivedKey, encapsulationResult.Encapsulation);
         }
@@ -123,11 +119,7 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
             Buffer.BlockCopy(ecSecret, 0, combinedKey, 0, ecSecret.Length);
             Buffer.BlockCopy(kyberSecret, 0, combinedKey, ecSecret.Length, kyberSecret.Length);
 
-            return _kdf.DeriveKey(
-                combinedKey,
-                32, // 32 bytes for AES-256
-                "HybridKey"u8, // Label
-                "HybridContext"u8); // Context
+            return DeriveKey(combinedKey);
         }
 
         // NIST SP 800-38D specifies AES-GCM for authenticated encryption.
@@ -145,7 +137,7 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
             return (encrypted, nonce, tag);
         }
         
-        private byte[] Decrypt(byte[] key, byte[] encrypted, byte[] nonce, byte[] tag)
+        private static byte[] Decrypt(byte[] key, byte[] encrypted, byte[] nonce, byte[] tag)
         {
             var decryptedBytes = new byte[encrypted.Length];
 
@@ -154,6 +146,11 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
             aesGcm.Decrypt(nonce, encrypted, tag, decryptedBytes);
 
             return decryptedBytes;
+        }
+        
+        private byte[] DeriveKey(byte[] data)
+        {
+            return _kdf.DeriveKey(data, 32, "HybridKey"u8, "HybridContext"u8);
         }
 
         private byte[] GenerateDataEncryptionKey()
