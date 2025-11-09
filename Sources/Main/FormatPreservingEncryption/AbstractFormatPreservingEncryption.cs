@@ -2,7 +2,7 @@
 using Org.BouncyCastle.Crypto.Fpe;
 using Org.BouncyCastle.Crypto.Parameters;
 
-namespace DevOnBike.Heimdall.Cryptography
+namespace DevOnBike.Heimdall.FormatPreservingEncryption
 {
     public abstract class AbstractFormatPreservingEncryption
     {

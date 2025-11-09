@@ -1,4 +1,4 @@
-﻿using DevOnBike.Heimdall.Cryptography;
+﻿using DevOnBike.Heimdall.FormatPreservingEncryption;
 using Microsoft.AspNetCore.DataProtection;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Text;
@@ -30,6 +30,28 @@ namespace DevOnBike.Security.Tests.FormatPreservingEncryption
             var decryptedCardNumber = fpe.Decrypt(encryptedCardNumber);
 
             Assert.Equal(originalCardNumber, decryptedCardNumber);
+        }
+        
+        [Fact]
+        public void EmailFpe_EncryptionDecryption()
+        {
+            var key = Hex.Decode("EF4359D8D580AA4F7F036D6F04FC6A942B7E151628AED2A6");
+
+            // A tweak is public, non-secret data that changes the encryption output.
+            // For example, you could use a customer ID or a portion of the card's BIN.
+            var secretKey = new Secret(key);
+            var fpe = new EmailFpe(secretKey);
+
+            // 3. Define the credit card number to encrypt
+            var originalEmail = "somfink@gmail.com";
+
+            // 4. Encrypt the number
+            var encryptedEmail = fpe.Encrypt(originalEmail);
+
+            // 5. Decrypt the number
+            var decryptedEmail = fpe.Decrypt(encryptedEmail);
+
+            Assert.Equal(originalEmail, decryptedEmail);
         }
 
     }

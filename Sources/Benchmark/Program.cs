@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Running;
+using Benchmarks;
 
 namespace DevOnBike.Security.Benchmarks
 {
@@ -6,7 +7,7 @@ namespace DevOnBike.Security.Benchmarks
     {
         static void Main(string[] args)
         {
-            BenchmarkRunner.Run<CryptorBenchmark>();
+            BenchmarkRunner.Run<ChaChaBenchmark>();
         }
     }
 }

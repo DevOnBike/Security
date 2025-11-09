@@ -5,14 +5,16 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<DebugType>embedded</DebugType>
-		<RootNamespace>DevOnBike.Security.Benchmarks</RootNamespace>
-		<AssemblyName>DevOnBike.Security.Benchmarks</AssemblyName>
+		<RootNamespace>Benchmarks</RootNamespace>
+		<AssemblyName>Benchmarks</AssemblyName>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<IsPackable>false</IsPackable>
+    <SonarQubeExclude>true</SonarQubeExclude>
+    <NoWarn>$(NoWarn);1591</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.15.1" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.6" />
 	</ItemGroup>
 
 	<ItemGroup>

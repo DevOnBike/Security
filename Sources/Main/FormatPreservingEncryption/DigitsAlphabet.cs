@@ -1,6 +1,6 @@
 ﻿using Org.BouncyCastle.Crypto.Utilities;
 
-namespace DevOnBike.Heimdall.Cryptography
+namespace DevOnBike.Heimdall.FormatPreservingEncryption
 {
     public class DigitsAlphabet : BasicAlphabetMapper
     {

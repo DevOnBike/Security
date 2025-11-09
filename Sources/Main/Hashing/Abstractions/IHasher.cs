@@ -1,4 +1,4 @@
-﻿namespace DevOnBike.Heimdall.Hashing
+﻿namespace DevOnBike.Heimdall.Hashing.Abstractions
 {
     public interface IHasher
     {
