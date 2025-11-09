@@ -3,7 +3,7 @@ using System.Text;
 using DevOnBike.Heimdall.Cryptography.Abstractions;
 using Microsoft.AspNetCore.DataProtection;
 
-namespace DevOnBike.Heimdall.Cryptography.FormatPreservingEncryption
+namespace DevOnBike.Heimdall.FormatPreservingEncryption
 {
     public class EmailFpe : AbstractFormatPreservingEncryption, IFormatPreservingEncryption
     {

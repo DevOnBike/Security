@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+﻿using DevOnBike.Heimdall.FormatPreservingEncryption;
+using Microsoft.AspNetCore.DataProtection;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Text;
-using DevOnBike.Heimdall.Cryptography.FormatPreservingEncryption;
 
 namespace DevOnBike.Security.Tests.FormatPreservingEncryption
 {

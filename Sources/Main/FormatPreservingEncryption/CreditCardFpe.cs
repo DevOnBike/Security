@@ -1,7 +1,7 @@
 ﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
 using Microsoft.AspNetCore.DataProtection;
 
-namespace DevOnBike.Heimdall.Cryptography.FormatPreservingEncryption
+namespace DevOnBike.Heimdall.FormatPreservingEncryption
 {
     public class CreditCardFpe : AbstractFormatPreservingEncryption, IFormatPreservingEncryption
     {
