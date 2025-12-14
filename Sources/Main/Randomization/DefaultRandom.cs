@@ -9,6 +9,8 @@ namespace DevOnBike.Heimdall.Randomization
     /// </summary>
     public class DefaultRandom : IRandom
     {
+        public static readonly DefaultRandom Instance = new();
+        
         public int Next()
         {
             // Use RandomNumberGenerator to get 4 bytes of secure random data.

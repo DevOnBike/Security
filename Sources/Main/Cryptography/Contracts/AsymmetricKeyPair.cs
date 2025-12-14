@@ -1,4 +1,5 @@
-﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
+﻿using System.Diagnostics.CodeAnalysis;
+using DevOnBike.Heimdall.Cryptography.Abstractions;
 using Org.BouncyCastle.Crypto.Parameters;
 
 namespace DevOnBike.Heimdall.Cryptography.Contracts
@@ -39,6 +40,15 @@ namespace DevOnBike.Heimdall.Cryptography.Contracts
             var priv = AsymmetricPrivateKey.Create(privateKey);
 
             return new AsymmetricKeyPair(pub, priv);
+        }
+        
+        [Experimental("SYSLIB5006")]
+        public static AsymmetricKeyPair Create(System.Security.Cryptography.MLKem mlKem)
+        {
+            var publicKey = AsymmetricPublicKey.Create(mlKem);
+            var privateKey = AsymmetricPrivateKey.Create(mlKem);
+
+            return new AsymmetricKeyPair(publicKey, privateKey);
         }
     }
 }

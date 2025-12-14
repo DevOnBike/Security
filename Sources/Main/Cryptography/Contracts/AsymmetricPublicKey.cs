@@ -1,4 +1,5 @@
-﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
+﻿using System.Diagnostics.CodeAnalysis;
+using DevOnBike.Heimdall.Cryptography.Abstractions;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.X509;
 
@@ -47,6 +48,14 @@ namespace DevOnBike.Heimdall.Cryptography.Contracts
             var keyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKey);
 
             return Create(publicKey.AlgorithmName, keyInfo.GetDerEncoded());
+        }
+        
+        [Experimental("SYSLIB5006")]
+        public static AsymmetricPublicKey Create(System.Security.Cryptography.MLKem mlKem)
+        {
+            var x509PublicKey = mlKem.ExportSubjectPublicKeyInfo();
+
+            return Create(mlKem.Algorithm.Name, x509PublicKey);
         }
     }
 }
