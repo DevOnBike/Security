@@ -102,6 +102,20 @@ namespace DevOnBike.Security.Tests.Pqc
             Assert.Equal(originalPlaintext, decryptedPlaintext);
         }
 
+        [Fact]
+        [Experimental("SYSLIB5006")]
+        public void GenerateKeyPairByMicrosoft_ShouldWorkOrThrowException()
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                Assert.NotNull(new MicrosoftMlKemKeysGenerator().GenerateKeyPair());
+            }
+            else
+            {
+                Assert.Throws<PlatformNotSupportedException>(() => new MicrosoftMlKemKeysGenerator().GenerateKeyPair());
+            }
+        }
+        
         // --- Cryptographic Helper Methods ---
 
         // NIST FIPS 186 specifies approved Elliptic Curves. P-256 is a standard choice.
@@ -115,8 +129,7 @@ namespace DevOnBike.Security.Tests.Pqc
         [Experimental("SYSLIB5006")]
         private IAsymmetricKeyPair GenerateKyberKeyPair()
         {
-            // var generator = new MlKemKeysGenerator();
-            var generator = new MicrosoftMlKemKeysGenerator();
+            var generator = new MlKemKeysGenerator();
             return generator.GenerateKeyPair();
         }
 
