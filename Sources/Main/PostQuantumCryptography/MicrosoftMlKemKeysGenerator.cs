@@ -2,23 +2,19 @@
 using System.Security.Cryptography;
 using DevOnBike.Heimdall.Cryptography.Abstractions;
 using DevOnBike.Heimdall.Cryptography.Contracts;
-using DevOnBike.Heimdall.Randomization;
-
 
 namespace DevOnBike.Heimdall.PostQuantumCryptography
 {
     public sealed class MicrosoftMlKemKeysGenerator : IAsymmetricKeyPairGenerator
     {
         private readonly MLKemAlgorithm _parameters;
-        private readonly IRandom _random;
 
-        public MicrosoftMlKemKeysGenerator(IRandom random, MLKemAlgorithm keyGenerationParameters)
+        public MicrosoftMlKemKeysGenerator(MLKemAlgorithm keyGenerationParameters)
         {
-            _random = random;
             _parameters = keyGenerationParameters;
         }
 
-        public MicrosoftMlKemKeysGenerator() : this(DefaultRandom.Instance, MLKemAlgorithm.MLKem768)
+        public MicrosoftMlKemKeysGenerator() : this(MLKemAlgorithm.MLKem768)
         {
         }
 
