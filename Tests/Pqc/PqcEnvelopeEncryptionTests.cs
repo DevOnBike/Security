@@ -106,7 +106,7 @@ namespace DevOnBike.Security.Tests.Pqc
         [Experimental("SYSLIB5006")]
         public void GenerateKeyPairByMicrosoft_ShouldWorkOrThrowException()
         {
-            if (!OperatingSystem.IsWindows())
+            if (OperatingSystem.IsWindows())
             {
                 Assert.NotNull(new MicrosoftMlKemKeysGenerator().GenerateKeyPair());
             }
