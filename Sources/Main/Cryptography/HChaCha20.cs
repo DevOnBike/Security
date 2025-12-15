@@ -6,7 +6,7 @@ using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants;
 namespace DevOnBike.Heimdall.Cryptography
 {
     /// <summary>
-    /// A pure C# implementation of the HChaCha20 function as specified in RFC 8439, Section 2.3.
+    /// A pure C# implementation of the HChaCha20 function.
     /// This is used to derive a sub-key from the main key and the first part of the nonce.
     /// </summary>
     internal static class HChaCha20
@@ -22,6 +22,7 @@ namespace DevOnBike.Heimdall.Cryptography
 
         public static void DeriveSubKey(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce, Span<byte> subKey)
         {
+            // Initial state set up
             Span<uint> state = stackalloc uint[16];
 
             state[0] = 0x61707865; // "expa"
@@ -34,6 +35,7 @@ namespace DevOnBike.Heimdall.Cryptography
                 state[4 + i] = ReadU32LE(key, i * 4);
             }
 
+            // HChaCha20 uses the first 16 bytes of the nonce (4 words)
             for (var i = 0; i < 4; ++i)
             {
                 state[12 + i] = ReadU32LE(nonce, i * 4);
@@ -42,26 +44,35 @@ namespace DevOnBike.Heimdall.Cryptography
             Span<uint> workingState = stackalloc uint[16];
             state.CopyTo(workingState);
 
+            // 20 rounds (10 iterations of 2 rounds each)
             for (var i = 0; i < 10; i++)
             {
+                // Odd round
                 QuarterRound(ref workingState[0], ref workingState[4], ref workingState[8], ref workingState[12]);
                 QuarterRound(ref workingState[1], ref workingState[5], ref workingState[9], ref workingState[13]);
                 QuarterRound(ref workingState[2], ref workingState[6], ref workingState[10], ref workingState[14]);
                 QuarterRound(ref workingState[3], ref workingState[7], ref workingState[11], ref workingState[15]);
+
+                // Even round
                 QuarterRound(ref workingState[0], ref workingState[5], ref workingState[10], ref workingState[15]);
                 QuarterRound(ref workingState[1], ref workingState[6], ref workingState[11], ref workingState[12]);
                 QuarterRound(ref workingState[2], ref workingState[7], ref workingState[8], ref workingState[13]);
                 QuarterRound(ref workingState[3], ref workingState[4], ref workingState[9], ref workingState[14]);
             }
 
-            WriteU32LE(subKey, 0, state[0] + workingState[0]);
-            WriteU32LE(subKey, 4, state[1] + workingState[1]);
-            WriteU32LE(subKey, 8, state[2] + workingState[2]);
-            WriteU32LE(subKey, 12, state[3] + workingState[3]);
-            WriteU32LE(subKey, 16, state[12] + workingState[12]);
-            WriteU32LE(subKey, 20, state[13] + workingState[13]);
-            WriteU32LE(subKey, 24, state[14] + workingState[14]);
-            WriteU32LE(subKey, 28, state[15] + workingState[15]);
+            // HChaCha20 output construction:
+            // Take the first 4 words and the last 4 words of the WORKING state.
+            // DO NOT add the initial state back (that is for ChaCha20, not HChaCha20).
+            
+            WriteU32LE(subKey, 0, workingState[0]);
+            WriteU32LE(subKey, 4, workingState[1]);
+            WriteU32LE(subKey, 8, workingState[2]);
+            WriteU32LE(subKey, 12, workingState[3]);
+            
+            WriteU32LE(subKey, 16, workingState[12]);
+            WriteU32LE(subKey, 20, workingState[13]);
+            WriteU32LE(subKey, 24, workingState[14]);
+            WriteU32LE(subKey, 28, workingState[15]);
         }
 
         public static byte[] CreateSubKeyBuffer()
