@@ -13,27 +13,27 @@ namespace Benchmarks
     [Orderer(SummaryOrderPolicy.FastestToSlowest)]
     [MemoryDiagnoser]
     [GcForce]
-    public class ChaChaBenchmark
+    public class XChaChaBenchmark
     {
         [Params(10, 100, 10_000)] 
         public int Size { get; set; }
 
-        private IChaCha20Poly1305 chacha;
-        private IXChaCha20Poly1305 xchacha;
+        private IXChaCha20Poly1305 bc;
+        private IXChaCha20Poly1305 ms;
 
         private byte[] bytes;
         private ISecret key;
 
         [Benchmark(Baseline = true)]
-        public void Chacha()
+        public void BouncyCastleXChacha()
         {
-            var encrypted = chacha.Encrypt(key, bytes);
+            var encrypted = bc.Encrypt(key, bytes);
         }
 
         [Benchmark]
-        public void XChaCha()
+        public void MicrosoftXChaCha()
         {
-            var encrypted = xchacha.Encrypt(key, bytes);
+            var encrypted = ms.Encrypt(key, bytes);
         }
 
         [GlobalSetup]
@@ -46,11 +46,11 @@ namespace Benchmarks
             random.Fill(bytes);
             
             key = CreateChaChaKey();
-            chacha = new BouncyCastleChaCha20Poly1305(random);
-            xchacha = new BouncyCastleXChaCha20Poly1305(random);
+            bc = new BouncyCastleXChaCha20Poly1305(random);
+            ms = new MicrosoftXChaCha20Poly1305(random);
         }
 
-        private ISecret CreateChaChaKey()
+        private static ISecret CreateChaChaKey()
         {
             return new Secret(RandomNumberGenerator.GetBytes(ChaCha20Constants.KeySizeInBytes));
         }

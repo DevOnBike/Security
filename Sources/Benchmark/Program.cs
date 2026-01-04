@@ -3,11 +3,12 @@ using Benchmarks;
 
 namespace DevOnBike.Security.Benchmarks
 {
-    internal class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            BenchmarkRunner.Run<ChaChaBenchmark>();
+            // BenchmarkRunner.Run<ChaChaBenchmark>();
+            BenchmarkRunner.Run<XChaChaBenchmark>();
         }
     }
 }

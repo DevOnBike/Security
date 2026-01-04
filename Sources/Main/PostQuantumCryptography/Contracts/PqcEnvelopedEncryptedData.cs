@@ -3,7 +3,7 @@
     public sealed class PqcEnvelopedEncryptedData
     {
         /// <summary>
-        /// The encapsulation blob from the Post-Quantum Cryptography (PQC) algorithm (e.g., Kyber).
+        /// The encapsulation blob from the Post-Quantum Cryptography (PQC) algorithm.
         /// This is used to regenerate the Key Encryption Key (KEK) during decryption.
         /// </summary>
         public byte[] Encapsulation { get; init; }

@@ -1,17 +1,19 @@
-﻿using DevOnBike.Heimdall.Randomization;
-using Microsoft.AspNetCore.DataProtection;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using DevOnBike.Heimdall.Cryptography.Abstractions;
+using DevOnBike.Heimdall.Randomization;
+using Microsoft.AspNetCore.DataProtection;
+using static DevOnBike.Heimdall.Cryptography.XChaCha20Constants; 
 
 namespace DevOnBike.Heimdall.Cryptography
 {
     /// <summary>
-    /// Implements XChaCha20-Poly1305 authenticated encryption using the built-in
-    /// System.Security.Cryptography classes available in modern .NET.
+    /// High-performance implementation of XChaCha20-Poly1305 using .NET primitives.
+    /// Optimized for low allocations using StackAlloc and Spans.
     /// </summary>
     public class MicrosoftXChaCha20Poly1305 : AbstractXChaCha20Poly1305, IXChaCha20Poly1305
     {
+        private const int InternalNonceSize = 12; // Standard ChaCha20 nonce size (IETF)
+        
         private readonly IRandom _random;
 
         public MicrosoftXChaCha20Poly1305(IRandom random)
@@ -19,99 +21,105 @@ namespace DevOnBike.Heimdall.Cryptography
             _random = random;
         }
 
-        public unsafe byte[] Encrypt(ISecret key, byte[] toEncrypt)
+        public byte[] Encrypt(ISecret key, byte[] toEncrypt)
         {
             var output = new byte[GetEncryptionTotalLength(toEncrypt)];
-            var keyBuffer = CreateKeyBuffer();
-            var nonce = CreateNonceBuffer();
-            var tag = CreateTagBuffer();
-            var subKey = HChaCha20.CreateSubKeyBuffer();
 
-            fixed (byte* __unused__0 = nonce)
-            fixed (byte* __unused__1 = keyBuffer)
-            fixed (byte* __unused__2 = subKey)
-            {
-                using var safeNonce = new SafeByteArray(nonce);
-                using var safeTag = new SafeByteArray(tag);
-                using var safeKey = new SafeByteArray(keyBuffer);
-                using var safeSubKey = new SafeByteArray(subKey);
+            Span<byte> outputSpan = output;
+            
+            var nonceSpan = outputSpan.Slice(0, NonceSizeInBytes);
+            var tagSpan = outputSpan.Slice(NonceSizeInBytes, TagSizeInBytes);
+            var cipherSpan = outputSpan.Slice(NonceSizeInBytes + TagSizeInBytes);
 
-                key.Fill(safeKey);
+            _random.Fill(nonceSpan);
 
-                // 1. Generate the 24-byte nonce.
-                _random.Fill(safeNonce); 
+            Encrypt(key, nonceSpan, toEncrypt, cipherSpan, tagSpan);
 
-                // 2. Derive the sub-key using HChaCha20.
-                HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);
-
-                // 3. Prepare the 12-byte nonce for the ChaCha20 engine.
-                var chaChaNonce = new byte[12];
-                Buffer.BlockCopy(safeNonce, 16, chaChaNonce, 4, 8);
-
-                // 4. Encrypt using the built-in ChaCha20Poly1305 class.
-                using var chacha = CreateCipher(safeSubKey);
-
-                var encrypted = new byte[toEncrypt.Length];
-
-                chacha.Encrypt(chaChaNonce, toEncrypt, encrypted, tag);
-
-                // 5. Combine into a single payload, [24-byte nonce] + [16-byte tag] + [ciphertext]
-                FillNonce(output, safeNonce);
-                FillTag(output, safeTag);
-                FillData(output, encrypted);
-
-                return output;
-            }
+            return output;
         }
 
-        /// <inheritdoc/>
-        public unsafe byte[] Decrypt(ISecret key, byte[] toDecrypt)
+        public byte[] Decrypt(ISecret key, byte[] toDecrypt)
         {
-            var keyBuffer = CreateKeyBuffer();
-            var nonce = CreateNonceBuffer();
-            var tag = CreateTagBuffer();
-            var subKey = HChaCha20.CreateSubKeyBuffer();
-            var output = new byte[GetDataLength(toDecrypt)];
-
-            fixed (byte* __unused__0 = nonce)
-            fixed (byte* __unused__1 = keyBuffer)
-            fixed (byte* __unused__2 = subKey)
+            // 1. Validate Input
+            if (toDecrypt.Length < NonceSizeInBytes + TagSizeInBytes)
             {
-                using var safeNonce = new SafeByteArray(nonce);
-                using var safeTag = new SafeByteArray(tag);
-                using var safeKey = new SafeByteArray(keyBuffer);
-                using var safeSubKey = new SafeByteArray(subKey);
-
-                key.Fill(safeKey);
-
-                // 1. Deconstruct the payload: nonce + cipher + tag
-                ExtractNonce(toDecrypt, safeNonce);
-                ExtractTag(toDecrypt, safeTag);
-
-                // 2. Derive the sub-key using HChaCha20.
-                HChaCha20.DeriveSubKey(safeKey, new ReadOnlySpan<byte>(safeNonce, 0, 16), safeSubKey.Span);
-
-                // 3. Prepare the 12-byte nonce for the ChaCha20 engine.
-                var chaChaNonce = new byte[12];
-                Buffer.BlockCopy(safeNonce, 16, chaChaNonce, 4, 8);
-
-                // 4. Decrypt using the built-in ChaCha20Poly1305 class.
-                var encrypted = new byte[output.Length];
-                
-                ExtractData(toDecrypt, encrypted);
-                
-                using var chacha = new ChaCha20Poly1305(subKey);
-                
-                chacha.Decrypt(chaChaNonce, encrypted, tag, output);
-
-                return output;
+                throw new ArgumentException("Ciphertext too short.", nameof(toDecrypt));
             }
+
+            // 2. Slice Input
+            ReadOnlySpan<byte> inputSpan = toDecrypt;
+            
+            var nonceSpan = inputSpan.Slice(0, NonceSizeInBytes);
+            var tagSpan = inputSpan.Slice(NonceSizeInBytes, TagSizeInBytes);
+            var cipherSpan = inputSpan.Slice(NonceSizeInBytes + TagSizeInBytes);
+
+            // 3. Prepare Output
+            var plainText = new byte[cipherSpan.Length];
+
+            // 4. Decrypt Core
+            Decrypt(key, nonceSpan, cipherSpan, tagSpan, plainText);
+
+            return plainText;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ChaCha20Poly1305 CreateCipher(ReadOnlySpan<byte> subKey)
+        private static void Encrypt(
+            ISecret key, 
+            ReadOnlySpan<byte> xNonce, 
+            ReadOnlySpan<byte> toEncrypt, 
+            Span<byte> encrypted, 
+            Span<byte> tag)
         {
-            return new ChaCha20Poly1305(subKey);
+            using var subKey = new SafeByteSpan(stackalloc byte[KeySizeInBytes]);
+            using var internalNonce = new SafeByteSpan(stackalloc byte[InternalNonceSize]);
+            using var safeKey = new SafeByteArray(new byte[KeySizeInBytes]);
+            
+            key.Fill(safeKey);
+
+            PrepareChaChaState(safeKey.Span, xNonce, subKey, internalNonce);
+
+            using var chacha = new ChaCha20Poly1305(subKey);
+                
+            chacha.Encrypt(internalNonce, toEncrypt, encrypted, tag);
+        }
+
+        private static void Decrypt(
+            ISecret key, 
+            ReadOnlySpan<byte> xNonce, 
+            ReadOnlySpan<byte> encrypted, 
+            ReadOnlySpan<byte> tag, 
+            Span<byte> plaintext)
+        {
+            using var subKey = new SafeByteSpan(stackalloc byte[KeySizeInBytes]);
+            using var internalNonce = new SafeByteSpan(stackalloc byte[InternalNonceSize]);
+            using var safeKey = new SafeByteArray(new byte[KeySizeInBytes]);
+
+            key.Fill(safeKey);
+
+            PrepareChaChaState(safeKey.Span, xNonce, subKey, internalNonce);
+
+            using var chacha = new ChaCha20Poly1305(subKey);
+
+            chacha.Decrypt(internalNonce, encrypted, tag, plaintext);
+        }
+
+        /// <summary>
+        /// Shared logic for HChaCha20 subkey derivation and nonce splitting.
+        /// </summary>
+        private static void PrepareChaChaState(
+            ReadOnlySpan<byte> masterKey, 
+            ReadOnlySpan<byte> xNonce, 
+            Span<byte> subKey,
+            Span<byte> internalNonce)
+        {
+            // 1. HChaCha20: Derive SubKey using MasterKey and first 16 bytes of X-Nonce
+            HChaCha20.DeriveSubKey(masterKey, xNonce[..16], subKey);
+
+            // 2. Prepare Internal Nonce (12 bytes) for standard ChaCha20Poly1305
+            // Format: [4 bytes 0x00] + [Last 8 bytes of X-Nonce]
+            // Note: stackalloc memory is not guaranteed to be zeroed, so we clear it.
+            internalNonce.Clear();
+
+            xNonce.Slice(16, 8).CopyTo(internalNonce.Slice(4));
         }
     }
 }
