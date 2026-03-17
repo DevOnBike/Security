@@ -82,34 +82,36 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    # 1. NOWY KROK: Oczyszczamy maszynę z preinstalowanego, "złego" .NET ARM64
+    # 1. SPALONA ZIEMIA: Usuwamy domyślnego .NET ARM64 wbudowanego w maszynę GitHuba.
+    # Dzięki temu system nie będzie miał "złego" środowiska do pomylenia się.
     - name: Remove built-in ARM64 .NET
-      run: sudo rm -rf /usr/local/share/dotnet
-      
-    - name: Install Rosetta 2
-      run: sudo softwareupdate --install-rosetta --agree-to-license || true 
+      run: sudo rm -rf /usr/local/share/dotnet || true
 
-    # 2. ZMIANA: Instalujemy systemowe OpenMP przez Homebrew (odpowiednik linuxowego libomp-dev)
-    - name: Install OpenMP library (Required for ML.NET MKL on Mac)
+    # 2. Instalacja emulatora
+    - name: Install Rosetta 2
+      run: sudo softwareupdate --install-rosetta --agree-to-license || true
+
+    # 3. Zależność dla ML.NET (Intel MKL)
+    - name: Install OpenMP library
       run: brew install libomp
 
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 4. Instalacja naszego .NET x64
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
-        architecture: x64 # KLUCZ! To pobierze wersję x64 i zmusi Maca do emulacji.
+        architecture: x64
 
     - name: Restore dependencies
       run: dotnet restore
 
     - name: Build
-      # Budujemy całą solucję bez flagi architektury
       run: dotnet build -c Release --no-restore 
 
+    # 5. FINAŁ: Wrzucamy z powrotem /p:UseAppHost=false!
+    # To zapobiega tworzeniu natywnej binarki, która gubiła ścieżki w architekturze Apple.
     - name: Test
-      # 3. ZMIANA: Celujemy bezpośrednio w projekt i wymuszamy architekturę osx-x64, 
-      # aby zrzucić pliki .dylib z paczki Redist.
-      run: dotnet test ./Tests/Tests.csproj -c Release -r osx-x64 --verbosity normal
+      run: dotnet test ./Tests/Tests.csproj -c Release -r osx-x64 --verbosity normal /p:UseAppHost=false

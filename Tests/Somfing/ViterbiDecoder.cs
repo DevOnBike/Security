@@ -20,13 +20,29 @@ namespace DevOnBike.Security.Tests.Somfing
         /// <returns>Lista stanów serwera odpowiadająca każdej sekundzie z obserwacji</returns>
         public List<ServerState> Decode(IReadOnlyList<double[]> observations)
         {
+            return Decode(observations, out _);
+        }
+
+        /// <summary>
+        /// Odkodowuje najbardziej prawdopodobną ścieżkę ukrytych stanów na podstawie ciągu obserwacji.
+        /// </summary>
+        /// <param name="observations">Lista wektorów metryk (np. [CPU, RAM] dla każdej sekundy)</param>
+        /// <param name="bestPathLogProbability">
+        ///   Log-prawdopodobieństwo najlepszej ścieżki: Σₜ [ln A(qₜ₋₁→qₜ) + ln B(qₜ, oₜ)].
+        ///   Wartość double.NegativeInfinity oznacza, że żadna ścieżka nie była możliwa
+        ///   (obserwacja poza zasięgiem wszystkich emisji) — wynik dekodera jest wtedy
+        ///   niezaufany i powinien być traktowany jako brak diagnozy.
+        /// </param>
+        /// <returns>Lista stanów serwera odpowiadająca każdej sekundzie z obserwacji</returns>
+        public List<ServerState> Decode(IReadOnlyList<double[]> observations, out double bestPathLogProbability)
+        {
             if (observations == null || observations.Count == 0)
             {
+                bestPathLogProbability = double.NegativeInfinity;
                 return [];
             }
 
             var T = observations.Count;
-            var numStates = _states.Length;
 
             // viterbi[t][state] przechowuje najwyższe znane log-prawdopodobieństwo dojścia do stanu 'state' w czasie 't'
             var viterbi = new Dictionary<ServerState, double>[T];
@@ -93,8 +109,8 @@ namespace DevOnBike.Security.Tests.Somfing
             // ==========================================
             // KROK 3: Zakończenie i odtworzenie ścieżki
             // ==========================================
-            var bestPath = new List<ServerState>(new ServerState[T]);
-            
+            var bestPath = new ServerState[T];
+
             var bestFinalProb = double.NegativeInfinity;
             var bestFinalState = _states[0];
 
@@ -108,6 +124,7 @@ namespace DevOnBike.Security.Tests.Somfing
                 }
             }
 
+            bestPathLogProbability = bestFinalProb;
             bestPath[T - 1] = bestFinalState;
 
             // Cofamy się po "okruszkach" (backpointers) aby odtworzyć całą historię
@@ -116,7 +133,7 @@ namespace DevOnBike.Security.Tests.Somfing
                 bestPath[t - 1] = backpointer[t][bestPath[t]];
             }
 
-            return bestPath;
+            return [.. bestPath];
         }
     }
 }
