@@ -16,7 +16,7 @@ jobs:
     steps:
     - name: Install linux components
       run: |
-        sudo apt-get update -y && sudo apt-get install -y libgomp1
+        sudo apt-get update -y && sudo apt-get install -y libomp-dev
 
     - name: Checkout code
       uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
       run: dotnet build -c Release --no-restore -p:SourceRevisionId=${{ steps.vars.outputs.sha_short }}
 
     - name: Test
-      run: dotnet test -c Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+      run: dotnet test ./Tests/DevOnBike.Security.Tests.csproj -c Release -r linux-x64 --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
 
     - name: Install ReportGenerator
       run: dotnet tool install -g dotnet-reportgenerator-globaltool
