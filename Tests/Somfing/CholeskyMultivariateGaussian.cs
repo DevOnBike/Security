@@ -1,4 +1,5 @@
-﻿namespace DevOnBike.Security.Tests.Somfing
+﻿using DevOnBike.Security.Tests.Somfing.Contracts;
+namespace DevOnBike.Security.Tests.Somfing
 {
     /// <summary>
     /// Wielowymiarowy rozkład Gaussa N(μ, Σ) z rozkładem Cholesky'ego.
@@ -12,12 +13,15 @@
     ///   5. Brak walidacji observation w ProbabilityDensity — dodane.
     ///   6. Dodano LogProbabilityDensity — numerycznie stabilniejsze dla małych p.
     /// </summary>
-    public class CholeskyMultivariateGaussian
+    public class CholeskyMultivariateGaussian : IEmissionModel
     {
         private readonly double[] _mean;
         private readonly double[,] _L; // dolna macierz trójkątna: Σ = L·Lᵀ
         private readonly double _logNormConst; // −½·(d·ln2π + ln|Σ|)
         private readonly int _dimensions;
+
+        /// <inheritdoc/>
+        public int Dimension => _dimensions;
 
         public CholeskyMultivariateGaussian(double[] mean, double[,] covariance)
         {
@@ -61,8 +65,6 @@
                 _logNormConst -= Math.Log(_L[i, i]);
             }
         }
-
-        // ── API publiczne ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Wartość gęstości prawdopodobieństwa p(x) dla podanej obserwacji.
@@ -143,7 +145,9 @@
                         var pivot = matrix[i, i] - sum;
 
                         if (pivot <= 0.0)
+                        {
                             throw new ArgumentException($"Macierz kowariancji nie jest dodatnio określona! Ujemny pivot [{i},{i}] = {pivot:G6}. Sprawdź czy wiersze/kolumny nie są idealnie skorelowane.", nameof(matrix));
+                        }
 
                         L[i, i] = Math.Sqrt(pivot);
                     }
@@ -155,6 +159,17 @@
             }
 
             return L;
+        }
+        
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Deleguje do <see cref="LogProbabilityDensity"/> — cała logika numeryczna
+        /// jest tam. GetLogProbability istnieje wyłącznie po to, żeby spełnić kontrakt
+        /// <see cref="IEmissionModel"/> wymagany przez algorytmy HMM (Forward, Viterbi).
+        /// </remarks>
+        public double GetLogProbability(double[] observation)
+        {
+            return LogProbabilityDensity(observation);
         }
     }
 }
