@@ -12,54 +12,86 @@ namespace DevOnBike.Security.Tests.Somfing
             // ==========================================
             var hmmModel = ItMonitoringHmmFactory.CreateCpuAndRamModel();
             var decoder = new ViterbiDecoder(hmmModel);
-            
-            // Używamy małego okna czasowego (np. 5 klatek/sekund), 
-            // aby test był szybki i przewidywalny.
             var monitor = new HmmRealTimeMonitor(decoder, 2, 5);
 
-            var currentState = ServerState.Healthy;
+            // Symulujemy silnik alertów (State Machine) - wymaga 2 klatek pod rząd do zmiany stanu
+            var alertEngine = new AlertEngine(requireConsecutiveFrames: 2);
+            var activeAlertState = ServerState.Healthy;
 
             // ==========================================
             // 2. ACT & ASSERT: Faza Normalnej Pracy
             // ==========================================
-            // Pompujemy 10 klatek ze standardowym użyciem (CPU ~20%, RAM ~40%)
             for (var i = 0; i < 10; i++)
             {
-                currentState = monitor.ProcessNewObservation([0.20, 0.40]);
+                var diag = monitor.ProcessNewObservation([0.20, 0.40]);
+                activeAlertState = alertEngine.ProcessDiagnosis(diag);
             }
-            
-            // System musi być zdrowy po 10 sekundach dobrej pracy
-            Assert.Equal(ServerState.Healthy, currentState);
+            Assert.Equal(ServerState.Healthy, activeAlertState);
 
             // ==========================================
             // 3. ACT & ASSERT: Fałszywy Alarm (Pojedynczy Pik)
             // ==========================================
-            // Nagle w jednej klatce CPU skacze do 99%, a RAM do 95%
-            currentState = monitor.ProcessNewObservation([0.99, 0.95]);
+            // HMM zareaguje na ten pik "paniką" (zwróci Critical), ale nasz silnik alertów 
+            // zażąda potwierdzenia w kolejnej sekundzie.
+            var spikeDiag = monitor.ProcessNewObservation([0.99, 0.95]);
+            activeAlertState = alertEngine.ProcessDiagnosis(spikeDiag);
 
-            // KLUCZOWY MOMENT HMM:
-            // Koszt zmiany stanu w macierzy przejść jest wyższy niż kara za zignorowanie jednej chorej metryki.
-            // Zwykły system wysłałby alert. Nasz model ma to zignorować!
-            Assert.Equal(ServerState.Healthy, currentState);
+            // System nadal widnieje jako Healthy w systemie alertowym!
+            Assert.Equal(ServerState.Healthy, activeAlertState);
 
-            // Kolejna klatka wraca do normy
-            currentState = monitor.ProcessNewObservation([0.20, 0.40]);
-            Assert.Equal(ServerState.Healthy, currentState);
+            // Kolejna klatka powraca do normy. Viterbi uspokaja się i zwraca Healthy.
+            var recoveryDiag = monitor.ProcessNewObservation([0.20, 0.40]);
+            activeAlertState = alertEngine.ProcessDiagnosis(recoveryDiag);
+
+            // Utrzymaliśmy status Healthy. PagerDuty milczy!
+            Assert.Equal(ServerState.Healthy, activeAlertState);
 
             // ==========================================
             // 4. ACT & ASSERT: Prawdziwa Awaria (Trwałe Obciążenie)
             // ==========================================
-            // Teraz system faktycznie zaczyna się dławić i to utrzymuje.
-            // Wysyłamy metryki awarii przez tyle klatek, ile wynosi nasze okno przesuwne.
+            // Teraz system zaczyna się dławić i stanutrzymuje się.
             for (var i = 0; i < 5; i++)
             {
-                currentState = monitor.ProcessNewObservation([0.99, 0.95]);
+                var failureDiag = monitor.ProcessNewObservation([0.99, 0.95]);
+                activeAlertState = alertEngine.ProcessDiagnosis(failureDiag);
             }
 
-            // Teraz okno zapełniło się anomalią. Prawdopodobieństwo tkwienia w stanie Healthy 
-            // przy takich metrykach stało się zerowe. Viterbi "łamie się" i zmienia ścieżkę.
-            // System MUSI wyzwolić stan krytyczny.
-            Assert.Equal(ServerState.Critical, currentState);
+            // HMM zwraca Critical kilka razy z rzędu. Silnik alertów ma potwierdzenie i zmienia stan.
+            Assert.Equal(ServerState.Critical, activeAlertState);
+        }
+
+        // --- Klasa pomocnicza reprezentująca logikę biznesową ponad HMM ---
+        private class AlertEngine
+        {
+            private readonly int _requiredFrames;
+            private int _consecutiveCount = 0;
+            private ServerState _currentAlertState = ServerState.Healthy;
+            private ServerState _lastDiagnosis = ServerState.Healthy;
+
+            public AlertEngine(int requireConsecutiveFrames)
+            {
+                _requiredFrames = requireConsecutiveFrames;
+            }
+
+            public ServerState ProcessDiagnosis(ServerState hmmDiagnosis)
+            {
+                if (hmmDiagnosis == _lastDiagnosis)
+                {
+                    _consecutiveCount++;
+                }
+                else
+                {
+                    _consecutiveCount = 1;
+                    _lastDiagnosis = hmmDiagnosis;
+                }
+
+                if (_consecutiveCount >= _requiredFrames)
+                {
+                    _currentAlertState = hmmDiagnosis;
+                }
+
+                return _currentAlertState;
+            }
         }
     }
 }
