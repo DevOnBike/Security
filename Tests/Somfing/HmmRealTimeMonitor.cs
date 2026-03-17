@@ -10,24 +10,37 @@ namespace DevOnBike.Security.Tests.Somfing
     {
         private readonly ViterbiDecoder _decoder;
         private readonly int _windowSize;
-        
+        private readonly int _expectedDimension;
+
         // Używamy Queue, ponieważ jest to najszybsza struktura do dodawania na koniec i usuwania z początku (FIFO)
         private readonly Queue<double[]> _slidingWindow;
+
+        /// <summary>
+        /// Log-prawdopodobieństwo ostatnio zdekodowanej ścieżki.
+        /// Wartość double.NegativeInfinity oznacza, że diagnoza jest niezaufana
+        /// (obserwacja poza zasięgiem wszystkich modeli emisji).
+        /// </summary>
+        public double LastPathLogProbability { get; private set; } = double.NegativeInfinity;
 
         /// <summary>
         /// Inicjalizuje monitor czasu rzeczywistego.
         /// </summary>
         /// <param name="decoder">Nasz skonfigurowany dekoder Viterbiego</param>
+        /// <param name="expectedDimension">Wymagany wymiar wektora obserwacji (np. 2 dla [CPU, RAM])</param>
         /// <param name="windowSize">Rozmiar okna pamięci (domyślnie 60 ostatnich próbek)</param>
-        public HmmRealTimeMonitor(ViterbiDecoder decoder, int windowSize = 60)
+        public HmmRealTimeMonitor(ViterbiDecoder decoder, int expectedDimension, int windowSize = 60)
         {
             _decoder = decoder ?? throw new ArgumentNullException(nameof(decoder));
 
-            if (windowSize < 2)
+            if (expectedDimension < 1)
+                throw new ArgumentOutOfRangeException(nameof(expectedDimension), "Wymiar obserwacji musi być >= 1.");
+
+            if (windowSize < 1)
             {
-                throw new ArgumentException("Rozmiar okna musi wynosić minimum 2, aby algorytm Viterbiego miał sens (wymaga historii).");
+                throw new ArgumentException("Rozmiar okna musi wynosić minimum 1.");
             }
-                
+
+            _expectedDimension = expectedDimension;
             _windowSize = windowSize;
             _slidingWindow = new Queue<double[]>(_windowSize);
         }
@@ -40,39 +53,29 @@ namespace DevOnBike.Security.Tests.Somfing
         public ServerState ProcessNewObservation(double[] currentMetrics)
         {
             if (currentMetrics == null)
-            {
                 throw new ArgumentNullException(nameof(currentMetrics));
-            }
+
+            if (currentMetrics.Length != _expectedDimension)
+                throw new ArgumentException(
+                $"Wektor metryk ma wymiar {currentMetrics.Length}, oczekiwano {_expectedDimension}. " +
+                "Sprawdź czy przekazujesz poprawną liczbę metryk (np. [CPU, RAM]).",
+                nameof(currentMetrics));
 
             // 1. Dodajemy nową próbkę na koniec kolejki
             _slidingWindow.Enqueue(currentMetrics);
 
             // 2. Jeśli przekroczyliśmy rozmiar okna, usuwamy najstarszą próbkę (wypada z pamięci)
             if (_slidingWindow.Count > _windowSize)
-            {
                 _slidingWindow.Dequeue();
-            }
 
-            // --- OPTYMALIZACJA STARTOWA ---
-            // Zanim okno się zapełni choć trochę (np. w pierwszej sekundzie),
-            // po prostu zakładamy stan, który jest najbardziej prawdopodobny w pierwszej klatce.
-            // Zabezpiecza to przed błędami dekodera dla zbyt krótkich ciągów.
-            if (_slidingWindow.Count == 1)
-            {
-                // Zwracamy najpewniejszy stan według macierzy startowej (InitialLogProbabilities)
-                // (W pełnej implementacji można by tu puścić dekodowanie samej emisji 1 klatki)
-                return ServerState.Healthy; 
-            }
-
-            // 3. Konwersja kolejki do listy odczytu (wymagane przez nasz dekoder)
-            // Używamy .ToArray() lub .ToList() dla bezpieczeństwa, aby dekoder widział migawkę
+            // 3. Snapshot kolejki — dekoder widzi niezmienialną kopię okna
             var currentWindowSnapshot = _slidingWindow.ToList();
 
-            // 4. Uruchamiamy mózg operacji na naszym wycinku czasowym
-            var decodedPath = _decoder.Decode(currentWindowSnapshot);
+            // 4. Dekodowanie ścieżki — Viterbi działa poprawnie dla każdego T >= 1
+            var decodedPath = _decoder.Decode(currentWindowSnapshot, out double logProb);
+            LastPathLogProbability = logProb;
 
-            // 5. Najważniejszy moment: zwracamy OSTATNI element ścieżki.
-            // To jest właśnie diagnoza tego, co dzieje się w systemie W TEJ SEKUNDZIE.
+            // 5. Zwracamy OSTATNI element ścieżki — diagnoza dla bieżącej chwili
             return decodedPath.Last();
         }
 

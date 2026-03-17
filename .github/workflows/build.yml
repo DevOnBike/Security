@@ -77,13 +77,10 @@ jobs:
       run: dotnet test -c Release --no-build --verbosity normal
 
   mac:
-    # 1. ZMIANA: Zmuszamy GitHuba do użycia starszej maszyny z procesorem Intel (x64), 
-    # ponieważ Intel MKL nie działa na Apple Silicon (macos-latest).
     runs-on: macos-latest
 
     steps:
-    # 1. SPALONA ZIEMIA: Usuwamy domyślnego .NET ARM64 wbudowanego w maszynę GitHuba.
-    # Dzięki temu system nie będzie miał "złego" środowiska do pomylenia się.
+    # 1. Usuwamy ARM64 .NET, aby system nie miał punktu odniesienia do błędu
     - name: Remove built-in ARM64 .NET
       run: sudo rm -rf /usr/local/share/dotnet || true
 
@@ -108,10 +105,12 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
+    # 5. Budujemy JAWNIE projekt testowy pod środowisko Mac Intela
     - name: Build
-      run: dotnet build -c Release --no-restore 
+      run: dotnet build ./Tests/Tests.csproj -c Release -r osx-x64
 
-    # 5. FINAŁ: Wrzucamy z powrotem /p:UseAppHost=false!
-    # To zapobiega tworzeniu natywnej binarki, która gubiła ścieżki w architekturze Apple.
+    # 6. SREBRNA KULA: Testujemy bezposrednio plik DLL!
+    # Omijamy plik .csproj i chore ścieżki MSBuilda. Test użyje tego samego 
+    # środowiska x64, które zbudowało projekt ułamek sekundy wcześniej.
     - name: Test
-      run: dotnet test ./Tests/Tests.csproj -c Release -r osx-x64 --verbosity normal /p:UseAppHost=false
+      run: dotnet test ./Tests/bin/Release/net10.0/osx-x64/DevOnBike.Security.Tests.dll --verbosity normal
