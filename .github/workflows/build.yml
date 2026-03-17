@@ -82,6 +82,10 @@ jobs:
     runs-on: macos-latest
 
     steps:
+    # 1. NOWY KROK: Oczyszczamy maszynę z preinstalowanego, "złego" .NET ARM64
+    - name: Remove built-in ARM64 .NET
+      run: sudo rm -rf /usr/local/share/dotnet
+      
     - name: Install Rosetta 2
       run: sudo softwareupdate --install-rosetta --agree-to-license    
 
