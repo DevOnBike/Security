@@ -21,8 +21,8 @@
 
         public CholeskyMultivariateGaussian(double[] mean, double[,] covariance)
         {
-            ArgumentNullException.ThrowIfNull(mean, nameof(mean));
-            ArgumentNullException.ThrowIfNull(covariance, nameof(covariance));
+            ArgumentNullException.ThrowIfNull(mean);
+            ArgumentNullException.ThrowIfNull(covariance);
 
             var n = mean.Length;
 
@@ -85,6 +85,7 @@
 
             // 1. diff = x − μ
             var diff = new double[_dimensions];
+            
             for (var i = 0; i < _dimensions; i++)
             {
                 diff[i] = observation[i] - _mean[i];
@@ -131,6 +132,7 @@
                 for (var j = 0; j <= i; j++)
                 {
                     var sum = 0.0;
+                    
                     for (var k = 0; k < j; k++)
                     {
                         sum += L[i, k] * L[j, k];
@@ -141,11 +143,7 @@
                         var pivot = matrix[i, i] - sum;
 
                         if (pivot <= 0.0)
-                            throw new ArgumentException(
-                            $"Macierz kowariancji nie jest dodatnio określona! " +
-                            $"Ujemny pivot [{i},{i}] = {pivot:G6}. " +
-                            "Sprawdź czy wiersze/kolumny nie są idealnie skorelowane.",
-                            "covariance");
+                            throw new ArgumentException($"Macierz kowariancji nie jest dodatnio określona! Ujemny pivot [{i},{i}] = {pivot:G6}. Sprawdź czy wiersze/kolumny nie są idealnie skorelowane.", nameof(matrix));
 
                         L[i, i] = Math.Sqrt(pivot);
                     }

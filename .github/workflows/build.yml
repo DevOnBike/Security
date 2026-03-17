@@ -77,9 +77,15 @@ jobs:
       run: dotnet test -c Release --no-build --verbosity normal
 
   mac:
-    runs-on: macos-latest
+    # 1. ZMIANA: Zmuszamy GitHuba do użycia starszej maszyny z procesorem Intel (x64), 
+    # ponieważ Intel MKL nie działa na Apple Silicon (macos-latest).
+    runs-on: macos-13
 
     steps:
+    # 2. ZMIANA: Instalujemy systemowe OpenMP przez Homebrew (odpowiednik linuxowego libomp-dev)
+    - name: Install OpenMP library (Required for ML.NET MKL on Mac)
+      run: brew install libomp
+
     - name: Checkout code
       uses: actions/checkout@v4
 
@@ -90,7 +96,12 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore
+
     - name: Build
+      # Budujemy całą solucję bez flagi architektury
       run: dotnet build -c Release --no-restore 
+
     - name: Test
-      run: dotnet test -c Release --no-build --verbosity normal
+      # 3. ZMIANA: Celujemy bezpośrednio w projekt i wymuszamy architekturę osx-x64, 
+      # aby zrzucić pliki .dylib z paczki Redist.
+      run: dotnet test ./Tests/Tests.csproj -c Release -r osx-x64 --verbosity normal
