@@ -82,6 +82,9 @@ jobs:
     runs-on: macos-latest
 
     steps:
+    - name: Install Rosetta 2
+      run: sudo softwareupdate --install-rosetta --agree-to-license    
+
     # 2. ZMIANA: Instalujemy systemowe OpenMP przez Homebrew (odpowiednik linuxowego libomp-dev)
     - name: Install OpenMP library (Required for ML.NET MKL on Mac)
       run: brew install libomp
