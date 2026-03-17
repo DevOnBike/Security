@@ -79,7 +79,7 @@ jobs:
   mac:
     # 1. ZMIANA: Zmuszamy GitHuba do użycia starszej maszyny z procesorem Intel (x64), 
     # ponieważ Intel MKL nie działa na Apple Silicon (macos-latest).
-    runs-on: macos-13
+    runs-on: macos-latest
 
     steps:
     # 2. ZMIANA: Instalujemy systemowe OpenMP przez Homebrew (odpowiednik linuxowego libomp-dev)
@@ -93,6 +93,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+        architecture: x64 # KLUCZ! To pobierze wersję x64 i zmusi Maca do emulacji.
 
     - name: Restore dependencies
       run: dotnet restore
