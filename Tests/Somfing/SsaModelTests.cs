@@ -1,20 +1,9 @@
-﻿using Microsoft.ML;
+﻿using DevOnBike.Security.Tests.Somfing.Contracts;
+using Microsoft.ML;
 using Microsoft.ML.Transforms.TimeSeries;
 
-namespace SsaForecastingTests
+namespace DevOnBike.Security.Tests.Somfing
 {
-    // Modele danych (często trzymane w osobnych plikach, tu dla wygody razem)
-    public class CpuData
-    {
-        public DateTime Timestamp { get; set; }
-        public float CpuUsage { get; set; }
-    }
-
-    public class CpuForecast
-    {
-        public float[] ForecastedCpuUsage { get; set; }
-    }
-
     public class SsaModelTests
     {
         [Fact]

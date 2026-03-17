@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using DevOnBike.Security.Tests.Somfing.Contracts;
 using Microsoft.ML;
-using Xunit;
 
-namespace AnomalyDetectionTests
+namespace DevOnBike.Security.Tests.Somfing
 {
-    // 1. Klasa wejściowa - pojedyncza metryka z Prometheusa/k8s
-
-    // 2. Klasa wyjściowa - wynik detekcji anomalii
-
     public class ChangePointDetectionTests
     {
         [Fact]

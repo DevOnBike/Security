@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AdvancedHMM
+﻿namespace DevOnBike.Security.Tests.Somfing
 {
     public class CholeskyMultivariateGaussian
     {

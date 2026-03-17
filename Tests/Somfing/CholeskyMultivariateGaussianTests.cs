@@ -1,7 +1,4 @@
-﻿using System;
-using Xunit;
-
-namespace AdvancedHMM.Tests;
+﻿namespace DevOnBike.Security.Tests.Somfing;
 
 public class CholeskyMultivariateGaussianTests
 {
