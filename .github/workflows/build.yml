@@ -16,7 +16,7 @@ jobs:
     steps:
     - name: Install linux components
       run: |
-        sudo apt-get update -y
+        sudo apt-get update -y && sudo apt-get install -y libgomp1
 
     - name: Checkout code
       uses: actions/checkout@v4
