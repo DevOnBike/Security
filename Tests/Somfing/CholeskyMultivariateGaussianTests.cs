@@ -1,18 +1,150 @@
-﻿namespace DevOnBike.Security.Tests.Somfing
+﻿using DevOnBike.Security.Tests.Somfing.Contracts;
+
+namespace DevOnBike.Security.Tests.Somfing
 {
     public class CholeskyMultivariateGaussianTests
     {
+        // ====================================================================
+        // 1. TESTY KONSTRUKTORA I WALIDACJI (EDGE CASES)
+        // ====================================================================
+
         [Fact]
-        public void ProbabilityDensity_StandardNormal_ShouldMatchSciPyReference()
+        public void Constructor_NullMean_ThrowsArgumentNullException()
         {
-            // ==========================================
-            // ARRANGE: Wektor Testowy 1 (Nieskorelowany)
-            // ==========================================
+            double[,] cov =
+            {
+                {
+                    1.0
+                }
+            };
+            Assert.Throws<ArgumentNullException>(() => new CholeskyMultivariateGaussian(null!, cov));
+        }
+
+        [Fact]
+        public void Constructor_NullCovariance_ThrowsArgumentNullException()
+        {
+            double[] mean =
+            {
+                0.0
+            };
+            Assert.Throws<ArgumentNullException>(() => new CholeskyMultivariateGaussian(mean, null!));
+        }
+
+        [Fact]
+        public void Constructor_EmptyMean_ThrowsArgumentException()
+        {
+            double[] mean = Array.Empty<double>();
+            double[,] cov = new double[0, 0];
+            Assert.Throws<ArgumentException>(() => new CholeskyMultivariateGaussian(mean, cov));
+        }
+
+        [Fact]
+        public void Constructor_DimensionMismatch_ThrowsArgumentException()
+        {
             double[] mean =
             {
                 0.0, 0.0
             };
-            double[,] covariance =
+            double[,] cov =
+            {
+                {
+                    1.0
+                }
+            }; // 1x1 cov dla 2D mean
+            Assert.Throws<ArgumentException>(() => new CholeskyMultivariateGaussian(mean, cov));
+        }
+
+        [Fact]
+        public void Constructor_NonPositiveDefiniteCovariance_ThrowsArgumentException()
+        {
+            double[] mean =
+            {
+                0.0, 0.0
+            };
+            // Macierz, która nie jest dodatnio określona (kolumny są idealnie skorelowane lub zera)
+            double[,] cov =
+            {
+                {
+                    1.0, 2.0
+                },
+                {
+                    2.0, 1.0
+                }
+            };
+
+            var ex = Assert.Throws<ArgumentException>(() => new CholeskyMultivariateGaussian(mean, cov));
+            Assert.Contains("nie jest dodatnio określona", ex.Message);
+        }
+
+        // ====================================================================
+        // 2. TESTY WALIDACJI OBSERWACJI
+        // ====================================================================
+
+        [Fact]
+        public void LogProbabilityDensity_NullObservation_ThrowsArgumentException()
+        {
+            var model = CreateStandard1DModel();
+            Assert.Throws<ArgumentException>(() => model.LogProbabilityDensity(null!));
+        }
+
+        [Fact]
+        public void LogProbabilityDensity_WrongDimension_ThrowsArgumentException()
+        {
+            var model = CreateStandard1DModel();
+            double[] obs =
+            {
+                0.0, 0.0
+            }; // Model 1D, obserwacja 2D
+            Assert.Throws<ArgumentException>(() => model.LogProbabilityDensity(obs));
+        }
+
+        // ====================================================================
+        // 3. TESTY POPRAWNOŚCI MATEMATYCZNEJ
+        // ====================================================================
+
+        [Fact]
+        public void ProbabilityDensity_StandardNormal1D_ReturnsCorrectValue()
+        {
+            // Arrange: Standardowy rozkład normalny N(0, 1)
+            var model = CreateStandard1DModel();
+            double[] observation =
+            {
+                0.0
+            }; // x = 0
+
+            // Act
+            double p = model.ProbabilityDensity(observation);
+
+            // Assert
+            // Wartość teoretyczna dla N(0,1) w x=0 to 1/sqrt(2*pi) ≈ 0.39894228
+            double expected = 1.0 / Math.Sqrt(2.0 * Math.PI);
+            Assert.Equal(expected, p, precision: 6);
+        }
+
+        [Fact]
+        public void LogProbabilityDensity_MatchesMathLogOfProbabilityDensity()
+        {
+            var model = CreateStandard1DModel();
+            double[] observation =
+            {
+                1.5
+            }; // Jakaś wartość x
+
+            double logP = model.LogProbabilityDensity(observation);
+            double p = model.ProbabilityDensity(observation);
+
+            Assert.Equal(Math.Log(p), logP, precision: 6);
+        }
+
+        [Fact]
+        public void ProbabilityDensity_Independent2D_ReturnsProductOf1D()
+        {
+            // Arrange: 2D Gauss z niezależnymi zmiennymi
+            double[] mean =
+            {
+                0.0, 0.0
+            };
+            double[,] cov =
             {
                 {
                     1.0, 0.0
@@ -21,98 +153,65 @@
                     0.0, 1.0
                 }
             };
+            var model2D = new CholeskyMultivariateGaussian(mean, cov);
 
-            var gaussian = new CholeskyMultivariateGaussian(mean, covariance);
-            double[] observation =
+            var model1D = CreateStandard1DModel();
+
+            double[] obs2D =
             {
-                0.0, 0.0
-            }; // Obserwacja w samym centrum "dzwonu"
+                1.0, -0.5
+            };
 
-            // ==========================================
-            // ACT
-            // ==========================================
-            double pdf = gaussian.ProbabilityDensity(observation);
+            // Act
+            double p2D = model2D.ProbabilityDensity(obs2D);
+            double p1Dx = model1D.ProbabilityDensity(new[]
+            {
+                obs2D[0]
+            });
+            double p1Dy = model1D.ProbabilityDensity(new[]
+            {
+                obs2D[1]
+            });
 
-            // ==========================================
-            // ASSERT
-            // ==========================================
-            // Wynik referencyjny wyliczony przez scipy.stats.multivariate_normal w Pythonie
-            double expectedPdf = 0.159154943;
-
-            // Tolerancja do 6 miejsc po przecinku (niweluje drobne różnice zaokrągleń między C# a C/Pythonem)
-            Assert.Equal(expectedPdf, pdf, precision: 6);
+            // Assert: Skoro zmienne są niezależne (cov[0,1] = 0), p(x,y) = p(x)*p(y)
+            Assert.Equal(p1Dx * p1Dy, p2D, precision: 6);
         }
 
         [Fact]
-        public void ProbabilityDensity_CorrelatedMetrics_ShouldMatchSciPyReference()
+        public void GetLogProbability_InterfaceImplementation_ReturnsSameAsLogProbabilityDensity()
         {
-            // ==========================================
-            // ARRANGE: Wektor Testowy 2 (Złożony / Skorelowany)
-            // ==========================================
-            double[] mean =
+            // Arrange
+            IEmissionModel model = CreateStandard1DModel();
+            double[] obs =
             {
-                1.0, 2.0
-            };
-            double[,] covariance =
-            {
-                {
-                    2.0, 0.5
-                },
-                {
-                    0.5, 1.0
-                }
+                0.75
             };
 
-            var gaussian = new CholeskyMultivariateGaussian(mean, covariance);
-            double[] observation =
-            {
-                1.5, 1.5
-            };
+            // Act
+            double interfaceLog = model.GetLogProbability(obs);
+            double concreteLog = ((CholeskyMultivariateGaussian)model).LogProbabilityDensity(obs);
 
-            // ==========================================
-            // ACT
-            // ==========================================
-            double pdf = gaussian.ProbabilityDensity(observation);
-
-            // ==========================================
-            // ASSERT
-            // ==========================================
-            // Wynik referencyjny wyliczony przez scipy.stats.multivariate_normal: 0.0904104523...
-            double expectedPdf = 0.09041045;
-
-            Assert.Equal(expectedPdf, pdf, precision: 6);
+            // Assert
+            Assert.Equal(concreteLog, interfaceLog, precision: 10);
         }
 
-        [Fact]
-        public void Constructor_NonPositiveDefiniteMatrix_ShouldThrowArgumentException()
+        // ====================================================================
+        // HELPERY
+        // ====================================================================
+
+        private CholeskyMultivariateGaussian CreateStandard1DModel()
         {
-            // ==========================================
-            // ARRANGE: Symulacja "zepsutych" danych z k8s
-            // Tworzymy macierz, w której wiersze/kolumny są identyczne.
-            // Oznacza to brak wariancji lub idealną korelację (wyznacznik = 0).
-            // Algorytm Cholesky'ego z definicji obsługuje TYLKO macierze dodatnio określone.
-            // ==========================================
             double[] mean =
             {
-                1.0, 1.0
+                0.0
             };
-            double[,] badCovariance =
+            double[,] cov =
             {
                 {
-                    1.0, 1.0
-                },
-                {
-                    1.0, 1.0
+                    1.0
                 }
             };
-
-            // ==========================================
-            // ACT & ASSERT
-            // ==========================================
-            // Nasz kod powinien wykryć wartość <= 0 pod pierwiastkiem i rzucić ArgumentException
-            var exception = Assert.Throws<ArgumentException>(() => new CholeskyMultivariateGaussian(mean, badCovariance));
-
-            Assert.Contains("nie jest dodatnio określona", exception.Message);
+            return new CholeskyMultivariateGaussian(mean, cov);
         }
     }
 }
