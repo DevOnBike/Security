@@ -44,17 +44,17 @@ namespace DevOnBike.Security.Tests.Somfing
         {
             ValidateInputs(initialModel, observations);
 
-            int T = observations.Count;
-            int N = _states.Length;
-            int D = observations[0].Length;
+            var T = observations.Count;
+            var N = _states.Length;
+            var D = observations[0].Length;
 
             var currentModel = initialModel;
-            double previousLogLikelihood = double.NegativeInfinity;
+            var previousLogLikelihood = double.NegativeInfinity;
 
             // Bufor N-elementowy wielokrotnego użytku — eliminuje O(T×N) alokacji List<double>
             var logProbBuf = new double[N];
 
-            for (int iter = 0; iter < maxIterations; iter++)
+            for (var iter = 0; iter < maxIterations; iter++)
             {
                 // ── E-step ────────────────────────────────────────────────────
                 var (alpha, logLikelihood) = ComputeForward(currentModel, observations, logProbBuf, T, N);
@@ -94,14 +94,14 @@ namespace DevOnBike.Security.Tests.Somfing
 
         private static void ValidateInputs(ContinuousHMM model, List<double[]> observations)
         {
-            ArgumentNullException.ThrowIfNull(model, nameof(model));
-            ArgumentNullException.ThrowIfNull(observations, nameof(observations));
+            ArgumentNullException.ThrowIfNull(model);
+            ArgumentNullException.ThrowIfNull(observations);
 
             if (observations.Count == 0)
                 throw new ArgumentException("Lista obserwacji nie może być pusta.", nameof(observations));
 
-            int expectedDim = model.EmissionModels.First().Value.Dimension;
-            for (int idx = 0; idx < observations.Count; idx++)
+            var expectedDim = model.EmissionModels.First().Value.Dimension;
+            for (var idx = 0; idx < observations.Count; idx++)
                 if (observations[idx].Length != expectedDim)
                     throw new ArgumentException(
                         $"Obserwacja [{idx}] ma wymiar {observations[idx].Length}, oczekiwano {expectedDim}.",
@@ -128,10 +128,10 @@ namespace DevOnBike.Security.Tests.Somfing
                 alpha[0][state] = model.InitialLogProbabilities[state]
                                 + model.EmissionModels[state].GetLogProbability(observations[0]);
 
-            for (int t = 1; t < T; t++)
+            for (var t = 1; t < T; t++)
                 foreach (var currState in _states)
                 {
-                    for (int k = 0; k < N; k++)
+                    for (var k = 0; k < N; k++)
                         logProbBuf[k] = alpha[t - 1][_states[k]]
                                       + model.TransitionLogProbabilities[_states[k]][currState];
 
@@ -139,7 +139,7 @@ namespace DevOnBike.Security.Tests.Somfing
                                         + model.EmissionModels[currState].GetLogProbability(observations[t]);
                 }
 
-            double logLikelihood = MathUtils.LogSumExp(_states.Select(s => alpha[T - 1][s]));
+            var logLikelihood = MathUtils.LogSumExp(_states.Select(s => alpha[T - 1][s]));
             return (alpha, logLikelihood);
         }
 
@@ -161,10 +161,10 @@ namespace DevOnBike.Security.Tests.Somfing
             foreach (var state in _states)
                 beta[T - 1][state] = 0.0; // log(1)
 
-            for (int t = T - 2; t >= 0; t--)
+            for (var t = T - 2; t >= 0; t--)
                 foreach (var currState in _states)
                 {
-                    for (int k = 0; k < N; k++)
+                    for (var k = 0; k < N; k++)
                         logProbBuf[k] = model.TransitionLogProbabilities[currState][_states[k]]
                                       + model.EmissionModels[_states[k]].GetLogProbability(observations[t + 1])
                                       + beta[t + 1][_states[k]];
@@ -192,7 +192,7 @@ namespace DevOnBike.Security.Tests.Somfing
             var gamma = InitDictArray(T);
             var xi = new Dictionary<ServerState, Dictionary<ServerState, double>>[T - 1];
 
-            for (int t = 0; t < T; t++)
+            for (var t = 0; t < T; t++)
             {
                 foreach (var state in _states)
                     gamma[t][state] = alpha[t][state] + beta[t][state] - logLikelihood;
@@ -262,11 +262,11 @@ namespace DevOnBike.Security.Tests.Somfing
             int T)
         {
             var row = new Dictionary<ServerState, double>();
-            double gammaSumLog = MathUtils.LogSumExp(gamma.Take(T - 1).Select(g => g[fromState]));
+            var gammaSumLog = MathUtils.LogSumExp(gamma.Take(T - 1).Select(g => g[fromState]));
 
             foreach (var toState in _states)
             {
-                double xiSumLog = MathUtils.LogSumExp(xi.Select(x => x[fromState][toState]));
+                var xiSumLog = MathUtils.LogSumExp(xi.Select(x => x[fromState][toState]));
                 row[toState] = Math.Exp(xiSumLog - gammaSumLog);
             }
 
@@ -286,20 +286,20 @@ namespace DevOnBike.Security.Tests.Somfing
         {
             var newMean = new double[D];
             var newCov = new double[D, D];
-            double gammaSumAllLog = MathUtils.LogSumExp(gamma.Select(g => g[state]));
+            var gammaSumAllLog = MathUtils.LogSumExp(gamma.Select(g => g[state]));
 
-            for (int t = 0; t < T; t++)
+            for (var t = 0; t < T; t++)
             {
-                double weight = Math.Exp(gamma[t][state] - gammaSumAllLog);
-                for (int d = 0; d < D; d++)
+                var weight = Math.Exp(gamma[t][state] - gammaSumAllLog);
+                for (var d = 0; d < D; d++)
                     newMean[d] += weight * observations[t][d];
             }
 
-            for (int t = 0; t < T; t++)
+            for (var t = 0; t < T; t++)
             {
-                double weight = Math.Exp(gamma[t][state] - gammaSumAllLog);
-                for (int d1 = 0; d1 < D; d1++)
-                    for (int d2 = 0; d2 < D; d2++)
+                var weight = Math.Exp(gamma[t][state] - gammaSumAllLog);
+                for (var d1 = 0; d1 < D; d1++)
+                    for (var d2 = 0; d2 < D; d2++)
                         newCov[d1, d2] += weight
                             * (observations[t][d1] - newMean[d1])
                             * (observations[t][d2] - newMean[d2]);
@@ -319,10 +319,10 @@ namespace DevOnBike.Security.Tests.Somfing
         /// </summary>
         private static void EnforceSpdGershgorin(double[,] cov, int D)
         {
-            for (int k = 0; k < D; k++)
+            for (var k = 0; k < D; k++)
             {
-                double offDiagSum = 0.0;
-                for (int l = 0; l < D; l++)
+                var offDiagSum = 0.0;
+                for (var l = 0; l < D; l++)
                     if (l != k) offDiagSum += Math.Abs(cov[k, l]);
 
                 cov[k, k] = Math.Max(cov[k, k], offDiagSum + MinVariance);
@@ -334,7 +334,7 @@ namespace DevOnBike.Security.Tests.Somfing
         private static Dictionary<ServerState, double>[] InitDictArray(int size)
         {
             var arr = new Dictionary<ServerState, double>[size];
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
                 arr[i] = new Dictionary<ServerState, double>();
             return arr;
         }
