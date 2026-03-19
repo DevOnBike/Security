@@ -33,8 +33,8 @@ namespace DevOnBike.Security.Tests.Somfing
         [Fact]
         public void Constructor_EmptyMean_ThrowsArgumentException()
         {
-            double[] mean = Array.Empty<double>();
-            double[,] cov = new double[0, 0];
+            var mean = Array.Empty<double>();
+            var cov = new double[0, 0];
             Assert.Throws<ArgumentException>(() => new CholeskyMultivariateGaussian(mean, cov));
         }
 
@@ -113,11 +113,11 @@ namespace DevOnBike.Security.Tests.Somfing
             }; // x = 0
 
             // Act
-            double p = model.ProbabilityDensity(observation);
+            var p = model.ProbabilityDensity(observation);
 
             // Assert
             // Wartość teoretyczna dla N(0,1) w x=0 to 1/sqrt(2*pi) ≈ 0.39894228
-            double expected = 1.0 / Math.Sqrt(2.0 * Math.PI);
+            var expected = 1.0 / Math.Sqrt(2.0 * Math.PI);
             Assert.Equal(expected, p, precision: 6);
         }
 
@@ -130,8 +130,8 @@ namespace DevOnBike.Security.Tests.Somfing
                 1.5
             }; // Jakaś wartość x
 
-            double logP = model.LogProbabilityDensity(observation);
-            double p = model.ProbabilityDensity(observation);
+            var logP = model.LogProbabilityDensity(observation);
+            var p = model.ProbabilityDensity(observation);
 
             Assert.Equal(Math.Log(p), logP, precision: 6);
         }
@@ -163,12 +163,12 @@ namespace DevOnBike.Security.Tests.Somfing
             };
 
             // Act
-            double p2D = model2D.ProbabilityDensity(obs2D);
-            double p1Dx = model1D.ProbabilityDensity(new[]
+            var p2D = model2D.ProbabilityDensity(obs2D);
+            var p1Dx = model1D.ProbabilityDensity(new[]
             {
                 obs2D[0]
             });
-            double p1Dy = model1D.ProbabilityDensity(new[]
+            var p1Dy = model1D.ProbabilityDensity(new[]
             {
                 obs2D[1]
             });
@@ -188,8 +188,8 @@ namespace DevOnBike.Security.Tests.Somfing
             };
 
             // Act
-            double interfaceLog = model.GetLogProbability(obs);
-            double concreteLog = ((CholeskyMultivariateGaussian)model).LogProbabilityDensity(obs);
+            var interfaceLog = model.GetLogProbability(obs);
+            var concreteLog = ((CholeskyMultivariateGaussian)model).LogProbabilityDensity(obs);
 
             // Assert
             Assert.Equal(concreteLog, interfaceLog, precision: 10);

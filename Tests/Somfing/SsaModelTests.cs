@@ -19,7 +19,7 @@ namespace DevOnBike.Security.Tests.Somfing
             var random = new Random(42);
 
             var historicalData = new List<CpuData>();
-            for (int i = 0; i < 30; i++)
+            for (var i = 0; i < 30; i++)
             {
                 historicalData.Add(new CpuData
                 {
@@ -28,8 +28,8 @@ namespace DevOnBike.Security.Tests.Somfing
                 });
             }
 
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(historicalData);
-            int expectedHorizon = 3;
+            var dataView = mlContext.Data.LoadFromEnumerable(historicalData);
+            var expectedHorizon = 3;
 
             // Definicja pipeline'u (parametry zoptymalizowane pod 30 próbek)
             var forecastingPipeline = mlContext.Forecasting.ForecastBySsa(
@@ -80,7 +80,7 @@ namespace DevOnBike.Security.Tests.Somfing
             var random = new Random(42);
 
             var historicalData = new List<CpuData>();
-            for (int i = 0; i < 30; i++)
+            for (var i = 0; i < 30; i++)
             {
                 historicalData.Add(new CpuData
                 {
@@ -89,7 +89,7 @@ namespace DevOnBike.Security.Tests.Somfing
                 });
             }
 
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(historicalData);
+            var dataView = mlContext.Data.LoadFromEnumerable(historicalData);
 
             // Definiujemy i trenujemy oryginalny model
             var forecastingPipeline = mlContext.Forecasting.ForecastBySsa(
@@ -121,7 +121,7 @@ namespace DevOnBike.Security.Tests.Somfing
                 memoryStream.Position = 0;
 
                 // 2. Wczytujemy model ze strumienia (wypakowanie z "zipa")
-                loadedModel = mlContext.Model.Load(memoryStream, out DataViewSchema loadedSchema);
+                loadedModel = mlContext.Model.Load(memoryStream, out var loadedSchema);
             }
 
             // Tworzymy NOWY silnik z WCZYTANEGO modelu i generujemy prognozę
@@ -138,7 +138,7 @@ namespace DevOnBike.Security.Tests.Somfing
             // Najważniejszy test: Odtworzony model musi dawać co do ułamka takie same liczby!
             Assert.Equal(originalForecast.ForecastedCpuUsage.Length, loadedForecast.ForecastedCpuUsage.Length);
 
-            for (int i = 0; i < originalForecast.ForecastedCpuUsage.Length; i++)
+            for (var i = 0; i < originalForecast.ForecastedCpuUsage.Length; i++)
             {
                 Assert.Equal(
                     originalForecast.ForecastedCpuUsage[i],

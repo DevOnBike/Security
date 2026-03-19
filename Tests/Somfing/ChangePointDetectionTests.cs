@@ -16,7 +16,7 @@ namespace DevOnBike.Security.Tests.Somfing
             var metrics = new List<ClusterMetric>();
 
             // Faza 1: Normalne, stabilne działanie (CPU ~30%) przez 30 pomiarów
-            for (int i = 0; i < 30; i++)
+            for (var i = 0; i < 30; i++)
             {
                 metrics.Add(new ClusterMetric
                 {
@@ -26,8 +26,8 @@ namespace DevOnBike.Security.Tests.Somfing
             }
 
             // Faza 2: Wdrażamy nową wersję z wyciekiem/błędem. CPU skacze i zostaje na ~80%
-            int timeOfDeploymentIndex = metrics.Count;
-            for (int i = 0; i < 15; i++)
+            var timeOfDeploymentIndex = metrics.Count;
+            for (var i = 0; i < 15; i++)
             {
                 metrics.Add(new ClusterMetric
                 {
@@ -36,7 +36,7 @@ namespace DevOnBike.Security.Tests.Somfing
                 });
             }
 
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(metrics);
+            var dataView = mlContext.Data.LoadFromEnumerable(metrics);
 
             // ==========================================
             // ACT: Budowa i uruchomienie modelu detekcji
@@ -51,7 +51,7 @@ namespace DevOnBike.Security.Tests.Somfing
 
             // Trenujemy i od razu transformujemy nasze dane
             ITransformer model = pipeline.Fit(dataView);
-            IDataView transformedData = model.Transform(dataView);
+            var transformedData = model.Transform(dataView);
 
             // Wyciągamy wyniki z powrotem do łatwej w obsłudze listy C#
             var predictions = mlContext.Data
@@ -65,19 +65,19 @@ namespace DevOnBike.Security.Tests.Somfing
             Assert.Equal(metrics.Count, predictions.Count);
 
             // 1. Sprawdzamy, czy w fazie stabilnej (przed wdrożeniem) nie było fałszywych alarmów
-            for (int i = 0; i < timeOfDeploymentIndex; i++)
+            for (var i = 0; i < timeOfDeploymentIndex; i++)
             {
-                bool isAnomaly = predictions[i].Prediction[0] == 1;
+                var isAnomaly = predictions[i].Prediction[0] == 1;
                 Assert.False(isAnomaly, $"Fałszywy alarm wykryty w minucie {i}, a system działał stabilnie!");
             }
 
             // 2. Szukamy, czy algorytm zauważył drastyczną zmianę (Change Point)
             // Zmiana powinna zostać wykryta w momencie wdrożenia lub zaraz po nim
-            bool changePointDetected = false;
-            int detectedAtIndex = -1;
+            var changePointDetected = false;
+            var detectedAtIndex = -1;
 
             // Sprawdzamy tylko fazę awarii
-            for (int i = timeOfDeploymentIndex; i < predictions.Count; i++)
+            for (var i = timeOfDeploymentIndex; i < predictions.Count; i++)
             {
                 if (predictions[i].Prediction[0] == 1) // Jeśli Alert == 1
                 {

@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using DevOnBike.Security.Tests.Somfing.Contracts;
 
 namespace DevOnBike.Security.Tests.Somfing
 {
-
     /// <summary>
     /// Algorytm Baum-Welch (EM) do trenowania parametrów λ = (π, A, μ, Σ).
     ///

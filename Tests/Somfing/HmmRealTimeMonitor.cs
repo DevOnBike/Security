@@ -72,7 +72,7 @@ namespace DevOnBike.Security.Tests.Somfing
             var currentWindowSnapshot = _slidingWindow.ToList();
 
             // 4. Dekodowanie ścieżki — Viterbi działa poprawnie dla każdego T >= 1
-            var decodedPath = _decoder.Decode(currentWindowSnapshot, out double logProb);
+            var decodedPath = _decoder.Decode(currentWindowSnapshot, out var logProb);
             LastPathLogProbability = logProb;
 
             // 5. Zwracamy OSTATNI element ścieżki — diagnoza dla bieżącej chwili
