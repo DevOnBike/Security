@@ -75,12 +75,14 @@ namespace DevOnBike.Security.Tests.Somfing
                 previousLogLikelihood = logLikelihood;
 
                 if (iter == maxIterations - 1)
+                {
                     LastResult = new BaumWelchLearnerResult
                     {
                         Converged = false,
                         Iterations = maxIterations,
                         FinalLogLikelihood = logLikelihood
                     };
+                }
             }
 
             return currentModel;
@@ -94,14 +96,20 @@ namespace DevOnBike.Security.Tests.Somfing
             ArgumentNullException.ThrowIfNull(observations);
 
             if (observations.Count == 0)
+            {
                 throw new ArgumentException("Lista obserwacji nie może być pusta.", nameof(observations));
+            }
 
             var expectedDim = model.EmissionModels.First().Value.Dimension;
             for (var idx = 0; idx < observations.Count; idx++)
+            {
                 if (observations[idx].Length != expectedDim)
+                {
                     throw new ArgumentException(
-                    $"Obserwacja [{idx}] ma wymiar {observations[idx].Length}, oczekiwano {expectedDim}.",
-                    nameof(observations));
+                        $"Obserwacja [{idx}] ma wymiar {observations[idx].Length}, oczekiwano {expectedDim}.",
+                        nameof(observations));
+                }
+            }
         }
 
         // ── E-step: Forward ───────────────────────────────────────────────────
@@ -121,19 +129,25 @@ namespace DevOnBike.Security.Tests.Somfing
             var alpha = InitDictArray(T);
 
             foreach (var state in _states)
+            {
                 alpha[0][state] = model.InitialLogProbabilities[state]
-                                  + model.EmissionModels[state].GetLogProbability(observations[0]);
+                                + model.EmissionModels[state].GetLogProbability(observations[0]);
+            }
 
             for (var t = 1; t < T; t++)
+            {
                 foreach (var currState in _states)
                 {
                     for (var k = 0; k < N; k++)
+                    {
                         logProbBuf[k] = alpha[t - 1][_states[k]]
-                                        + model.TransitionLogProbabilities[_states[k]][currState];
+                                      + model.TransitionLogProbabilities[_states[k]][currState];
+                    }
 
                     alpha[t][currState] = MathUtils.LogSumExp(logProbBuf)
-                                          + model.EmissionModels[currState].GetLogProbability(observations[t]);
+                                        + model.EmissionModels[currState].GetLogProbability(observations[t]);
                 }
+            }
 
             var logLikelihood = MathUtils.LogSumExp(_states.Select(s => alpha[T - 1][s]));
             return (alpha, logLikelihood);
@@ -155,18 +169,24 @@ namespace DevOnBike.Security.Tests.Somfing
             var beta = InitDictArray(T);
 
             foreach (var state in _states)
+            {
                 beta[T - 1][state] = 0.0; // log(1)
+            }
 
             for (var t = T - 2; t >= 0; t--)
+            {
                 foreach (var currState in _states)
                 {
                     for (var k = 0; k < N; k++)
+                    {
                         logProbBuf[k] = model.TransitionLogProbabilities[currState][_states[k]]
-                                        + model.EmissionModels[_states[k]].GetLogProbability(observations[t + 1])
-                                        + beta[t + 1][_states[k]];
+                                      + model.EmissionModels[_states[k]].GetLogProbability(observations[t + 1])
+                                      + beta[t + 1][_states[k]];
+                    }
 
                     beta[t][currState] = MathUtils.LogSumExp(logProbBuf);
                 }
+            }
 
             return beta;
         }
@@ -188,7 +208,7 @@ namespace DevOnBike.Security.Tests.Somfing
         ///   (z γ) i licznik (z ξ) mogą różnić się o ~1e-15.
         ///   Przy derywacji γ z ξ mianownik UpdateTransitions jest DOKŁADNIE sumą
         ///   marginalną licznika: Σ_t γ[t][i] = Σ_t Σ_j ξ[t][i][j] — gwarantuje
-        ///   że wiersze A_new sumują się do 1 z dokładnością maszynową, nie tylko analitycznie.
+        ///   że wiersze A_new sumują się do 1 z dokładnością maszynową.
         /// </summary>
         private (Dictionary<ServerState, double>[] gamma, Dictionary<ServerState, Dictionary<ServerState, double>>[] xi) ComputeGammaXi(
             Dictionary<ServerState, double>[] alpha,
@@ -205,28 +225,35 @@ namespace DevOnBike.Security.Tests.Somfing
             for (var t = 0; t < T - 1; t++)
             {
                 xi[t] = new Dictionary<ServerState, Dictionary<ServerState, double>>();
+
                 foreach (var fromState in _states)
                 {
                     xi[t][fromState] = new Dictionary<ServerState, double>();
+
                     foreach (var toState in _states)
+                    {
                         xi[t][fromState][toState] =
                             alpha[t][fromState]
                             + model.TransitionLogProbabilities[fromState][toState]
                             + model.EmissionModels[toState].GetLogProbability(observations[t + 1])
                             + beta[t + 1][toState]
                             - logLikelihood;
-
+                    }
                 }
 
                 // γ[t][i] = LogSumExp_j(ξ[t][i][j]) — wyprowadzone z ξ, nie z α+β
-                // gwarantuje dokładność maszynową: Σ_t γ[t][i] ≡ Σ_t Σ_j ξ[t][i][j]
+                // gwarantuje: Σ_t γ[t][i] ≡ Σ_t Σ_j ξ[t][i][j] z dokładnością maszynową
                 foreach (var fromState in _states)
+                {
                     gamma[t][fromState] = MathUtils.LogSumExp(xi[t][fromState].Values);
+                }
             }
 
             // ── t = T-1: brak ξ → γ wyłącznie z α+β ─────────────────────────
             foreach (var state in _states)
+            {
                 gamma[T - 1][state] = alpha[T - 1][state] + beta[T - 1][state] - logLikelihood;
+            }
 
             return (gamma, xi);
         }
@@ -265,7 +292,9 @@ namespace DevOnBike.Security.Tests.Somfing
         private static double UpdatePi(
             Dictionary<ServerState, double>[] gamma,
             ServerState state)
-            => Math.Exp(gamma[0][state]);
+        {
+            return Math.Exp(gamma[0][state]);
+        }
 
         /// <summary>
         /// A_new[s][j] = Σₜ ξ[t][s→j] / Σₜ₌₀ᵀ⁻² γ[t][s]  — w log-space, zwracane liniowo.
@@ -290,7 +319,9 @@ namespace DevOnBike.Security.Tests.Somfing
             {
                 var uniform = 1.0 / _states.Length;
                 foreach (var toState in _states)
+                {
                     row[toState] = uniform;
+                }
                 return row;
             }
 
@@ -324,17 +355,23 @@ namespace DevOnBike.Security.Tests.Somfing
             {
                 var weight = Math.Exp(gamma[t][state] - gammaSumAllLog);
                 for (var d = 0; d < D; d++)
+                {
                     newMean[d] += weight * observations[t][d];
+                }
             }
 
             for (var t = 0; t < T; t++)
             {
                 var weight = Math.Exp(gamma[t][state] - gammaSumAllLog);
                 for (var d1 = 0; d1 < D; d1++)
-                for (var d2 = 0; d2 < D; d2++)
-                    newCov[d1, d2] += weight
-                                      * (observations[t][d1] - newMean[d1])
-                                      * (observations[t][d2] - newMean[d2]);
+                {
+                    for (var d2 = 0; d2 < D; d2++)
+                    {
+                        newCov[d1, d2] += weight
+                            * (observations[t][d1] - newMean[d1])
+                            * (observations[t][d2] - newMean[d2]);
+                    }
+                }
             }
 
             return (newMean, newCov);
@@ -355,8 +392,12 @@ namespace DevOnBike.Security.Tests.Somfing
             {
                 var offDiagSum = 0.0;
                 for (var l = 0; l < D; l++)
+                {
                     if (l != k)
+                    {
                         offDiagSum += Math.Abs(cov[k, l]);
+                    }
+                }
 
                 cov[k, k] = Math.Max(cov[k, k], offDiagSum + MinVariance);
             }
@@ -368,7 +409,9 @@ namespace DevOnBike.Security.Tests.Somfing
         {
             var arr = new Dictionary<ServerState, double>[size];
             for (var i = 0; i < size; i++)
+            {
                 arr[i] = new Dictionary<ServerState, double>();
+            }
             return arr;
         }
     }
