@@ -100,7 +100,12 @@ namespace DevOnBike.Security.Tests.Somfing
                 throw new ArgumentException("Lista obserwacji nie może być pusta.", nameof(observations));
             }
 
-            var expectedDim = model.EmissionModels.First().Value.Dimension;
+            var expectedDim = 0;
+            foreach (var kvp in model.EmissionModels)
+            {
+                expectedDim = kvp.Value.Dimension;
+                break;
+            }
             for (var idx = 0; idx < observations.Count; idx++)
             {
                 if (observations[idx].Length != expectedDim)
@@ -149,7 +154,12 @@ namespace DevOnBike.Security.Tests.Somfing
                 }
             }
 
-            var logLikelihood = MathUtils.LogSumExp(_states.Select(s => alpha[T - 1][s]));
+            for (var k = 0; k < N; k++)
+            {
+                logProbBuf[k] = alpha[T - 1][_states[k]];
+            }
+
+            var logLikelihood = MathUtils.LogSumExp(logProbBuf);
             return (alpha, logLikelihood);
         }
 
@@ -325,11 +335,23 @@ namespace DevOnBike.Security.Tests.Somfing
                 return row;
             }
 
-            var gammaSumLog = MathUtils.LogSumExp(gamma.Take(T - 1).Select(g => g[fromState]));
+            var gammaBuf = new double[T - 1];
+            for (var t = 0; t < T - 1; t++)
+            {
+                gammaBuf[t] = gamma[t][fromState];
+            }
+
+            var gammaSumLog = MathUtils.LogSumExp(gammaBuf);
 
             foreach (var toState in _states)
             {
-                var xiSumLog = MathUtils.LogSumExp(xi.Select(x => x[fromState][toState]));
+                var xiBuf = new double[xi.Length];
+                for (var t = 0; t < xi.Length; t++)
+                {
+                    xiBuf[t] = xi[t][fromState][toState];
+                }
+
+                var xiSumLog = MathUtils.LogSumExp(xiBuf);
                 row[toState] = Math.Exp(xiSumLog - gammaSumLog);
             }
 
@@ -349,7 +371,13 @@ namespace DevOnBike.Security.Tests.Somfing
         {
             var newMean = new double[D];
             var newCov = new double[D, D];
-            var gammaSumAllLog = MathUtils.LogSumExp(gamma.Select(g => g[state]));
+            var gammaSumBuf = new double[T];
+            for (var t = 0; t < T; t++)
+            {
+                gammaSumBuf[t] = gamma[t][state];
+            }
+
+            var gammaSumAllLog = MathUtils.LogSumExp(gammaSumBuf);
 
             for (var t = 0; t < T; t++)
             {
