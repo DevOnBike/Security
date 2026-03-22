@@ -100,8 +100,8 @@ namespace DevOnBike.Security.Tests.Somfing
             for (var idx = 0; idx < observations.Count; idx++)
                 if (observations[idx].Length != expectedDim)
                     throw new ArgumentException(
-                        $"Obserwacja [{idx}] ma wymiar {observations[idx].Length}, oczekiwano {expectedDim}.",
-                        nameof(observations));
+                    $"Obserwacja [{idx}] ma wymiar {observations[idx].Length}, oczekiwano {expectedDim}.",
+                    nameof(observations));
         }
 
         // ── E-step: Forward ───────────────────────────────────────────────────
@@ -122,17 +122,17 @@ namespace DevOnBike.Security.Tests.Somfing
 
             foreach (var state in _states)
                 alpha[0][state] = model.InitialLogProbabilities[state]
-                                + model.EmissionModels[state].GetLogProbability(observations[0]);
+                                  + model.EmissionModels[state].GetLogProbability(observations[0]);
 
             for (var t = 1; t < T; t++)
                 foreach (var currState in _states)
                 {
                     for (var k = 0; k < N; k++)
                         logProbBuf[k] = alpha[t - 1][_states[k]]
-                                      + model.TransitionLogProbabilities[_states[k]][currState];
+                                        + model.TransitionLogProbabilities[_states[k]][currState];
 
                     alpha[t][currState] = MathUtils.LogSumExp(logProbBuf)
-                                        + model.EmissionModels[currState].GetLogProbability(observations[t]);
+                                          + model.EmissionModels[currState].GetLogProbability(observations[t]);
                 }
 
             var logLikelihood = MathUtils.LogSumExp(_states.Select(s => alpha[T - 1][s]));
@@ -162,8 +162,8 @@ namespace DevOnBike.Security.Tests.Somfing
                 {
                     for (var k = 0; k < N; k++)
                         logProbBuf[k] = model.TransitionLogProbabilities[currState][_states[k]]
-                                      + model.EmissionModels[_states[k]].GetLogProbability(observations[t + 1])
-                                      + beta[t + 1][_states[k]];
+                                        + model.EmissionModels[_states[k]].GetLogProbability(observations[t + 1])
+                                        + beta[t + 1][_states[k]];
 
                     beta[t][currState] = MathUtils.LogSumExp(logProbBuf);
                 }
@@ -174,27 +174,36 @@ namespace DevOnBike.Security.Tests.Somfing
         // ── E-step: γ i ξ ────────────────────────────────────────────────────
 
         /// <summary>
-        /// log γ[t][s]    = α[t][s] + β[t][s] − log P(O|λ)
         /// log ξ[t][i][j] = α[t][i] + ln A[i→j] + ln B[j](oₜ₊₁) + β[t+1][j] − log P(O|λ)
+        ///
+        /// log γ[t][i] wyprowadzamy Z ξ dla t &lt; T−1:
+        ///   log γ[t][i] = LogSumExp_j(log ξ[t][i][j])
+        ///
+        /// Dla t = T−1 (brak ξ): log γ[T-1][i] = α[T-1][i] + β[T-1][i] − log P(O|λ)
+        ///
+        /// DLACZEGO to ważne (spójność γ-ξ):
+        ///   Rabiner 1989: γ_t(i) ≡ Σ_j ξ_t(i,j)
+        ///   Obliczanie γ niezależnie przez α+β daje ten sam wynik matematycznie,
+        ///   ale wprowadza dwie niezależne ścieżki numeryczne — mianownik UpdateTransitions
+        ///   (z γ) i licznik (z ξ) mogą różnić się o ~1e-15.
+        ///   Przy derywacji γ z ξ mianownik UpdateTransitions jest DOKŁADNIE sumą
+        ///   marginalną licznika: Σ_t γ[t][i] = Σ_t Σ_j ξ[t][i][j] — gwarantuje
+        ///   że wiersze A_new sumują się do 1 z dokładnością maszynową, nie tylko analitycznie.
         /// </summary>
         private (Dictionary<ServerState, double>[] gamma, Dictionary<ServerState, Dictionary<ServerState, double>>[] xi) ComputeGammaXi(
-                Dictionary<ServerState, double>[] alpha,
-                Dictionary<ServerState, double>[] beta,
-                double logLikelihood,
-                ContinuousHMM model,
-                List<double[]> observations,
-                int T)
+            Dictionary<ServerState, double>[] alpha,
+            Dictionary<ServerState, double>[] beta,
+            double logLikelihood,
+            ContinuousHMM model,
+            List<double[]> observations,
+            int T)
         {
             var gamma = InitDictArray(T);
             var xi = new Dictionary<ServerState, Dictionary<ServerState, double>>[T - 1];
 
-            for (var t = 0; t < T; t++)
+            // ── t = 0 .. T-2: oblicz ξ, następnie wyprowadź γ z ξ ────────────
+            for (var t = 0; t < T - 1; t++)
             {
-                foreach (var state in _states)
-                    gamma[t][state] = alpha[t][state] + beta[t][state] - logLikelihood;
-
-                if (t >= T - 1) continue;
-
                 xi[t] = new Dictionary<ServerState, Dictionary<ServerState, double>>();
                 foreach (var fromState in _states)
                 {
@@ -206,8 +215,18 @@ namespace DevOnBike.Security.Tests.Somfing
                             + model.EmissionModels[toState].GetLogProbability(observations[t + 1])
                             + beta[t + 1][toState]
                             - logLikelihood;
+
                 }
+
+                // γ[t][i] = LogSumExp_j(ξ[t][i][j]) — wyprowadzone z ξ, nie z α+β
+                // gwarantuje dokładność maszynową: Σ_t γ[t][i] ≡ Σ_t Σ_j ξ[t][i][j]
+                foreach (var fromState in _states)
+                    gamma[t][fromState] = MathUtils.LogSumExp(xi[t][fromState].Values);
             }
+
+            // ── t = T-1: brak ξ → γ wyłącznie z α+β ─────────────────────────
+            foreach (var state in _states)
+                gamma[T - 1][state] = alpha[T - 1][state] + beta[T - 1][state] - logLikelihood;
 
             return (gamma, xi);
         }
@@ -250,6 +269,12 @@ namespace DevOnBike.Security.Tests.Somfing
 
         /// <summary>
         /// A_new[s][j] = Σₜ ξ[t][s→j] / Σₜ₌₀ᵀ⁻² γ[t][s]  — w log-space, zwracane liniowo.
+        ///
+        /// Ponieważ γ[t&lt;T-1] jest wyprowadzone z ξ (w ComputeGammaXi),
+        /// mianownik Σ_t γ[t][i] jest dokładnie Σ_t Σ_j ξ[t][i][j] z dokładnością maszynową.
+        ///
+        /// Edge case T=1: xi puste → LogSumExp([]) = −∞ → exp(−∞−(−∞)) = NaN.
+        /// Przy T=1 nie ma obserwowanych przejść — zwracamy rozkład jednostajny.
         /// </summary>
         private Dictionary<ServerState, double> UpdateTransitions(
             Dictionary<ServerState, double>[] gamma,
@@ -258,6 +283,17 @@ namespace DevOnBike.Security.Tests.Somfing
             int T)
         {
             var row = new Dictionary<ServerState, double>();
+
+            // T=1: xi jest puste — brak obserwowanych przejść.
+            // Zwracamy rozkład jednostajny jako neutral prior.
+            if (xi.Length == 0)
+            {
+                var uniform = 1.0 / _states.Length;
+                foreach (var toState in _states)
+                    row[toState] = uniform;
+                return row;
+            }
+
             var gammaSumLog = MathUtils.LogSumExp(gamma.Take(T - 1).Select(g => g[fromState]));
 
             foreach (var toState in _states)
@@ -295,10 +331,10 @@ namespace DevOnBike.Security.Tests.Somfing
             {
                 var weight = Math.Exp(gamma[t][state] - gammaSumAllLog);
                 for (var d1 = 0; d1 < D; d1++)
-                    for (var d2 = 0; d2 < D; d2++)
-                        newCov[d1, d2] += weight
-                            * (observations[t][d1] - newMean[d1])
-                            * (observations[t][d2] - newMean[d2]);
+                for (var d2 = 0; d2 < D; d2++)
+                    newCov[d1, d2] += weight
+                                      * (observations[t][d1] - newMean[d1])
+                                      * (observations[t][d2] - newMean[d2]);
             }
 
             return (newMean, newCov);
@@ -319,7 +355,8 @@ namespace DevOnBike.Security.Tests.Somfing
             {
                 var offDiagSum = 0.0;
                 for (var l = 0; l < D; l++)
-                    if (l != k) offDiagSum += Math.Abs(cov[k, l]);
+                    if (l != k)
+                        offDiagSum += Math.Abs(cov[k, l]);
 
                 cov[k, k] = Math.Max(cov[k, k], offDiagSum + MinVariance);
             }

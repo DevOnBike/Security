@@ -55,5 +55,32 @@ namespace DevOnBike.Security.Tests.Somfing
 
             return max + Math.Log(sum);
         }
+        
+        /// <summary>
+        /// Bezpiecznie numerycznie dodawanie dwóch prawdopodobieństw w przestrzeni logarytmicznej.
+        /// Zwraca: log(exp(logA) + exp(logB))
+        /// </summary>
+        public static double LogAdd(double logA, double logB)
+        {
+            // Obsługa zerowych prawdopodobieństw (log(0) = -Infinity). 
+            // Bez tego Math.Exp(-Infinity - -Infinity) zwróciłoby NaN!
+            if (double.IsNegativeInfinity(logA))
+            {
+                return logB;
+            }
+
+            if (double.IsNegativeInfinity(logB))
+            {
+                return logA;
+            }
+
+            // Znajdujemy większą i mniejszą wartość
+            var max = Math.Max(logA, logB);
+            var min = Math.Min(logA, logB);
+
+            // Zabezpieczenie przed ekstremalnym underflow. 
+            // Jeśli różnica jest ogromna, exp() zwróci 0, a log(1) = 0.
+            return max + Math.Log(1.0 + Math.Exp(min - max));
+        }
     }
 }
