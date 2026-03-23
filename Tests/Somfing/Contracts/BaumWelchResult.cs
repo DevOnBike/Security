@@ -1,4 +1,4 @@
-namespace DevOnBike.Security.Tests.Somfing
+namespace DevOnBike.Security.Tests.Somfing.Contracts
 {
     /// <summary>
     /// Wynik pojedynczego treningu Baum-Welch.

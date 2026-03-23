@@ -1,5 +1,4 @@
-using DevOnBike.Security.Tests.Somfing.Contracts;
-namespace DevOnBike.Security.Tests.Somfing
+namespace DevOnBike.Security.Tests.Somfing.Contracts
 {
     public sealed class StateChangedEventArgs(ServerState previous, ServerState current, DateTimeOffset changedAt)
         : EventArgs

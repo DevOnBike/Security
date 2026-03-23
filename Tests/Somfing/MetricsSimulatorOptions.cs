@@ -1,4 +1,6 @@
-﻿namespace DevOnBike.Security.Tests.Somfing
+﻿using DevOnBike.Security.Tests.Somfing.Contracts;
+
+namespace DevOnBike.Security.Tests.Somfing
 {
     // ════════════════════════════════════════════════════════════════════════
     //  IMetricsSource.cs + MetricsSimulator.cs  —  Faza 5

@@ -1,4 +1,5 @@
 ﻿using DevOnBike.Security.Tests.Somfing.Contracts;
+
 namespace DevOnBike.Security.Tests.Somfing
 {
     /// <summary>
@@ -47,17 +48,7 @@ namespace DevOnBike.Security.Tests.Somfing
 
             // ── współczynnik normalizujący w log-space ───────────────────────────
             //
-            // PROBLEM oryginalnego kodu:
-            //   _coefficient = 1 / (sqrt(pow(2π,d)) * detSqrt)
-            //   Math.Pow(2π, d) → +Infinity dla d ≳ 150 (podwójna precyzja: max ≈ 10^308)
-            //   Wtedy _coefficient = 0, a ProbabilityDensity zwraca 0 dla każdego wektora.
-            //
-            // ROZWIĄZANIE: przechowujemy log-stałą i aplikujemy Math.Exp dopiero w ProbabilityDensity.
-            //
-            //   logNormConst = −½·d·ln(2π) − Σᵢ ln L[i,i]
-            //
             // Człon Σᵢ ln L[i,i] = ½·ln|Σ|, bo ln|Σ| = ln|L·Lᵀ| = 2·Σᵢ ln L[i,i].
-            // Zakres logarytmów jest dobrze ograniczony dla każdego rozsądnego d.
             _logNormConst = -0.5 * _dimensions * Math.Log(2.0 * Math.PI);
 
             for (var i = 0; i < _dimensions; i++)

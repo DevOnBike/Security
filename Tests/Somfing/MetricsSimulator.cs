@@ -1,3 +1,5 @@
+using DevOnBike.Security.Tests.Somfing.Contracts;
+
 namespace DevOnBike.Security.Tests.Somfing
 {
     /// <summary>

@@ -1,4 +1,4 @@
-namespace DevOnBike.Security.Tests.Somfing
+namespace DevOnBike.Security.Tests.Somfing.Contracts
 {
     /// <summary>
     /// Wynik treningu Baum-Welch — informacje o zbieżności (iteracje, logP, zbieżność).
@@ -9,7 +9,6 @@ namespace DevOnBike.Security.Tests.Somfing
         public int Iterations { get; init; }
         public double FinalLogLikelihood { get; init; }
 
-        public override string ToString() =>
-            $"Converged={Converged}  Iterations={Iterations}  LogLikelihood={FinalLogLikelihood:F4}";
+        public override string ToString() => $"Converged={Converged}  Iterations={Iterations}  LogLikelihood={FinalLogLikelihood:F4}";
     }
 }

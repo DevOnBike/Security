@@ -1,6 +1,4 @@
-﻿using DevOnBike.Security.Tests.Somfing.Contracts;
-
-namespace DevOnBike.Security.Tests.Somfing
+﻿namespace DevOnBike.Security.Tests.Somfing.Contracts
 {
     // ── event args ────────────────────────────────────────────────────────
 
