@@ -1,1 +1,1 @@
-dotnet run -c Release -f net9.0 --filter *
+dotnet run -c Release -f net10.0 --filter *

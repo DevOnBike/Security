@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <DebugType>embedded</DebugType>
     <NoWarn>$(NoWarn);1591</NoWarn>
@@ -11,12 +11,12 @@
     <SourceRevisionId>N/A</SourceRevisionId>
     <InformationalVersion>$(Version)+$(SourceRevisionId)</InformationalVersion>
     <PackageId>DevOnBike.Heimdall</PackageId>
-    <Version>0.0.5</Version>
+    <Version>10.0.2</Version>
     <Authors>DevOnBike</Authors>
     <Description>Security powered by Heimdall</Description>
     <RepositoryUrl>https://github.com/DevOnBike/Security</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>security;encryption;chacha20;randomization</PackageTags>
+    <PackageTags>security;encryption;chacha20;randomization;pqc</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>logo.png</PackageIcon>

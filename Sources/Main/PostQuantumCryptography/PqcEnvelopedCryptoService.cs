@@ -34,7 +34,7 @@ namespace DevOnBike.Heimdall.PostQuantumCryptography
         public PqcEnvelopedEncryptedData Encrypt(byte[] toEncrypt, byte[] aad)
         {
             // 1. Generate a new, random Data Encryption Key (DEK) for this session.
-            var dek = GenerateDataEncryptionKey(); // 256-bit AES key
+            var dek = GenerateDataEncryptionKey();
 
             // 2. Create a hybrid Key Encryption Key (KEK) to wrap the DEK.
             var (kek, encapsulation) = CreateKeyWrappingKeyForEncryption();

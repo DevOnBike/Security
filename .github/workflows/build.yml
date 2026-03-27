@@ -16,7 +16,7 @@ jobs:
     steps:
     - name: Install linux components
       run: |
-        sudo apt-get update -y
+        sudo apt-get update -y && sudo apt-get install -y libomp-dev
 
     - name: Checkout code
       uses: actions/checkout@v4
@@ -24,20 +24,20 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.x
+        dotnet-version: 10.x
 
     - name: Get commit hash
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore 
 
     - name: Build
       run: dotnet build -c Release --no-restore -p:SourceRevisionId=${{ steps.vars.outputs.sha_short }}
 
     - name: Test
-      run: dotnet test -c Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+      run: dotnet test ./Tests/Tests.csproj -c Release -r linux-x64 --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
 
     - name: Install ReportGenerator
       run: dotnet tool install -g dotnet-reportgenerator-globaltool
@@ -67,7 +67,7 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
 
     - name: Restore dependencies
       run: dotnet restore
@@ -80,17 +80,37 @@ jobs:
     runs-on: macos-latest
 
     steps:
+    # 1. Usuwamy ARM64 .NET, aby system nie miał punktu odniesienia do błędu
+    - name: Remove built-in ARM64 .NET
+      run: sudo rm -rf /usr/local/share/dotnet || true
+
+    # 2. Instalacja emulatora
+    - name: Install Rosetta 2
+      run: sudo softwareupdate --install-rosetta --agree-to-license || true
+
+    # 3. Zależność dla ML.NET (Intel MKL)
+    - name: Install OpenMP library
+      run: brew install libomp
+
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 4. Instalacja naszego .NET x64
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
+        architecture: x64
 
     - name: Restore dependencies
       run: dotnet restore
+
+    # 5. Budujemy JAWNIE projekt testowy pod środowisko Mac Intela
     - name: Build
-      run: dotnet build -c Release --no-restore 
+      run: dotnet build ./Tests/Tests.csproj -c Release -r osx-x64
+
+    # 6. SREBRNA KULA: Testujemy bezposrednio plik DLL!
+    # Omijamy plik .csproj i chore ścieżki MSBuilda. Test użyje tego samego 
+    # środowiska x64, które zbudowało projekt ułamek sekundy wcześniej.
     - name: Test
-      run: dotnet test -c Release --no-build --verbosity normal
+      run: dotnet test ./Tests/bin/Release/net10.0/osx-x64/DevOnBike.Security.Tests.dll --verbosity normal

@@ -1,7 +1,7 @@
 ﻿using DevOnBike.Heimdall.Cryptography.Abstractions;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Pkcs;
-using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 
 namespace DevOnBike.Heimdall.Cryptography.Contracts
@@ -49,6 +49,14 @@ namespace DevOnBike.Heimdall.Cryptography.Contracts
             var keyInfo = PrivateKeyInfoFactory.CreatePrivateKeyInfo(privateKey);
 
             return Create(privateKey.AlgorithmName, keyInfo.GetDerEncoded());
+        }
+        
+        [Experimental("SYSLIB5006")]
+        public static AsymmetricPrivateKey Create(MLKem mlKem)
+        {
+            var privateKey = mlKem.ExportPkcs8PrivateKey();
+
+            return Create(mlKem.Algorithm.Name, privateKey);
         }
 
         public void Dispose()

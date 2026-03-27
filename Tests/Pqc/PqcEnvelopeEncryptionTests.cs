@@ -1,4 +1,5 @@
-﻿using DevOnBike.Heimdall.Cryptography;
+﻿using System.Diagnostics.CodeAnalysis;
+using DevOnBike.Heimdall.Cryptography;
 using DevOnBike.Heimdall.Cryptography.Abstractions;
 using Org.BouncyCastle.Crypto.Agreement;
 using Org.BouncyCastle.Security;
@@ -14,12 +15,13 @@ namespace DevOnBike.Security.Tests.Pqc
     public class PqcEnvelopeEncryptionTests
     {
         [Fact]
+        [Experimental("SYSLIB5006")]
         public void ShouldEncryptAndDecryptOwnData_UsingPqcEnvelopeEncryptionFinal()
         {
             // ARRANGE: One-time setup and data definition
             var originalPlaintext = "My data must be safe from quantum computers, haha";
             var toEncrypt = Encoding.UTF8.GetBytes(originalPlaintext);
-            var aad = Encoding.UTF8.GetBytes("some_id");
+            var aad = "some_id"u8.ToArray();
 
             var classicKeyPair = GenerateEcKeyPair();
             var pqcKeyPair = GenerateKyberKeyPair();
@@ -38,8 +40,9 @@ namespace DevOnBike.Security.Tests.Pqc
             // ASSERT
             Assert.Equal(toEncrypt, decrypted);
         }
-
+        
         [Fact]
+        [Experimental("SYSLIB5006")]
         public void ShouldEncryptAndDecryptOwnData_UsingPqcEnvelopeEncryption()
         {
             // ARRANGE: One-time setup and data definition
@@ -99,6 +102,20 @@ namespace DevOnBike.Security.Tests.Pqc
             Assert.Equal(originalPlaintext, decryptedPlaintext);
         }
 
+        [Fact]
+        [Experimental("SYSLIB5006")]
+        public void GenerateKeyPairByMicrosoft_ShouldWorkOrThrowException()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.NotNull(new MicrosoftMlKemKeysGenerator().GenerateKeyPair());
+            }
+            else
+            {
+                Assert.Throws<PlatformNotSupportedException>(() => new MicrosoftMlKemKeysGenerator().GenerateKeyPair());
+            }
+        }
+        
         // --- Cryptographic Helper Methods ---
 
         // NIST FIPS 186 specifies approved Elliptic Curves. P-256 is a standard choice.
@@ -109,6 +126,7 @@ namespace DevOnBike.Security.Tests.Pqc
         }
 
         // NIST FIPS 203 standardizes CRYSTALS-Kyber as ML-KEM.
+        [Experimental("SYSLIB5006")]
         private IAsymmetricKeyPair GenerateKyberKeyPair()
         {
             var generator = new MlKemKeysGenerator();
